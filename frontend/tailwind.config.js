@@ -11,6 +11,10 @@ export default {
         blackv1: '#131313', // Name for the second color
         blacks1: '#1A1E22'
       },
+      screens: {
+        'sm-custom': '320px', // Define custom breakpoint
+      },
+
     },
   },
   plugins: [

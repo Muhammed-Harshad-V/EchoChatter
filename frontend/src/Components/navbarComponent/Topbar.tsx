@@ -5,14 +5,13 @@ import { Outlet } from 'react-router-dom';
 
 const TopBar: React.FC = () => {
   return (
-    
-    <div className='max-w-full bg-blacks1 h-screen flex flex-col overflow-hidden'>
-      <div className="flex items-center justify-between px-8 py-4 bg-blacks1 shadow-md">
+    <div className='w-full h-full flex flex-col bg-blacks1'>
+      <div className="flex items-center justify-between px-8 py-4 bg-blacks1 shadow-md h-[80px]">
         {/* Left: App Name */}
         <div className="flex items-center">
           <p className="text-white text-xl ml-4 font-semibold">H-Messenger</p>
         </div>
-  
+
         {/* Right: Profile & Logout */}
         <div className="flex items-center space-x-8">
           {/* Settings */}
@@ -20,7 +19,7 @@ const TopBar: React.FC = () => {
             <FontAwesomeIcon icon={faCog} size="lg" />
             <span className="ml-2 hidden sm:block">Settings</span>
           </button>
-  
+
           {/* Logout */}
           <button className="flex items-center text-gray-400 hover:text-white">
             <FontAwesomeIcon icon={faSignOutAlt} size="lg" />
@@ -28,7 +27,7 @@ const TopBar: React.FC = () => {
           </button>
         </div>
       </div>
-      <div className='w-[90%] m-auto mt-2'>
+      <div className='w-[90%] m-auto'>
         <Outlet />
       </div>
     </div>
@@ -36,3 +35,4 @@ const TopBar: React.FC = () => {
 };
 
 export default TopBar;
+

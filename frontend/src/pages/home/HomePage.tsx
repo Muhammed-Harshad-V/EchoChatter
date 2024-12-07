@@ -5,7 +5,7 @@ import Contact from "../../Components/home/Contact"
 
 function HomePage() {
   return (
-    <div className="h-screen flex bg-black">
+    <div className="h-[calc(100vh-80px)] flex bg-black">
      {/* Sidebar (right side) */}
       <Contact />
 
