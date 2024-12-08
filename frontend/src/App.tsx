@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import HomePage from "./pages/home/HomePage";
-import Navbar from "./pages/navbar/navbar";
+import LoginPage from "./pages/loginpage/LoginPAge";
+import Navbar from "./pages/navbar/Navbar";
 
 
 
@@ -12,9 +13,14 @@ function App() {
     {
       path: "/",
       element: <Navbar/>,
-      children: [{
+      children: [
+        {
         path: "/",
         element: <HomePage/>
+      },
+        {
+        path: "/login",
+        element: <LoginPage/>
       },
     ]
     }
