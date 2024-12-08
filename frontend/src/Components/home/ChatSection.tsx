@@ -17,14 +17,71 @@ const ChatSection = () => {
       setMessage(""); // Clear the message input after sending
     }
   };
+  const contact = [
+    { sender: 'Obi-Wan Kenobi', time: '12:45', text: 'You were the Chosen One!', status: 'Delivered' },
+    { sender: 'Anakin Skywalker', time: '12:46', text: 'I hate you!', status: 'Seen at 12:46' }
+  ];
+  const messages = [
+    { sender: 'self', time: '12:45', text: 'You were the Chosen One!', status: 'Delivered' },
+    { sender: 'Anakin Skywalker', time: '12:46', text: 'I hate you!', status: 'Seen at 12:46' },
+    { sender: 'self', time: '12:45', text: 'You were the Chosen One!', status: 'Delivered' },
+    { sender: 'Anakin Skywalker', time: '12:46', text: 'I hate you!', status: 'Seen at 12:46' },
+    { sender: 'self', time: '12:45', text: 'You were the Chosen One!', status: 'Delivered' },
+    { sender: 'Anakin Skywalker', time: '12:46', text: 'I hate you!', status: 'Seen at 12:46' },
+    { sender: 'self', time: '12:45', text: 'You were the Chosen One!', status: 'Delivered' },
+    { sender: 'Anakin Skywalker', time: '12:46', text: 'I hate you!', status: 'Seen at 12:46' },
+    { sender: 'self', time: '12:45', text: 'You were the Chosen One!', status: 'Delivered' },
+    { sender: 'Anakin Skywalker', time: '12:46', text: 'I hate you!', status: 'Seen at 12:46' },
+    { sender: 'self', time: '12:45', text: 'You were the Chosen One!', status: 'Delivered' },
+    { sender: 'Anakin Skywalker', time: '12:46', text: 'I hate you!', status: 'Seen at 12:46' },
+    { sender: 'self', time: '12:45', text: 'You were the Chosen One!', status: 'Delivered' },
+    { sender: 'Anakin Skywalker', time: '12:46', text: 'I hate you!', status: 'Seen at 12:46' },
+    { sender: 'self', time: '12:45', text: 'You were the Chosen One!', status: 'Delivered' },
+    { sender: 'Anakin Skywalker', time: '12:46', text: 'I hate you!', status: 'Seen at 12:46' },
+  ];
 
   return (
     <div className="flex flex-col h-full w-full bg-black">
-      {/* Chat Header */}
-      <div className="flex-1 bg-black p-6 flex flex-col justify-center items-center overflow-y-auto scrollbar-thin scrollbar-thumb-blackv1 scrollbar-track-transparent">
-        <h2 className=" font-semibold mb-4 text-white sm-custom:text-lg sm:text-xl lg:text-3xl">Welcome to H-Messenger</h2>
-        <p className="text-gray-400 mb-4 text-center ">Select a contact to start chatting!</p>
-      </div>
+       <div className="flex-1 bg-black p-6 sm-custom:p-[10px] sm:p-[18px] flex flex-col justify-start items-start overflow-y-auto scrollbar-thin scrollbar-thumb-blackv1 scrollbar-track-transparent">
+        {/* If a contact is selected, show chat messages */}
+        {contact ? (
+  <div className="w-full">
+    {/* Displaying Messages */}
+    {messages.length > 0 ? (
+      messages.map((message, index) => (
+        <div key={index} className="flex items-start mb-4">
+          {/* Avatar */}
+          <div className={` ${message.sender === 'self' ? 'ml-auto' : ''}`}>
+            
+          </div>
+
+          {/* Message Content */}
+          <div className={`flex flex-col max-w-xs ${message.sender === 'self' ? 'items-end' : 'items-start'}`}>
+            {/* Chat Header */}
+            <div className={`chat-header text-sm font-semibold text-white ${message.sender === 'self' ? 'text-left' : 'text-left'}`}>
+              {message.sender}
+            </div>
+
+            {/* Chat Bubble */}
+            <div className={`rounded-lg p-2 ${message.sender === 'self' ? 'bg-blue-500 text-white' : 'bg-gray-600 text-white'}`}>
+              {message.text}
+            </div>
+
+          </div>
+
+            
+        </div>
+      ))
+    ) : (
+      <p className="text-gray-400">No messages yet</p>
+    )}
+  </div>
+) : (
+  <p className="text-gray-400">Select a contact to start chatting!</p>
+)}
+
+
+</div>
 
       {/* Message Input and Action Buttons */}
       <div className="flex items-center p-4 bg-black border-gray-600">
