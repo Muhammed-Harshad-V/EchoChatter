@@ -22,8 +22,8 @@ const ChatSection = () => {
     <div className="flex flex-col h-full w-full bg-black">
       {/* Chat Header */}
       <div className="flex-1 bg-black p-6 flex flex-col justify-center items-center overflow-y-auto scrollbar-thin scrollbar-thumb-blackv1 scrollbar-track-transparent">
-        <h2 className="text-3xl font-semibold mb-4 text-white">Welcome to H-Messenger</h2>
-        <p className="text-gray-400 mb-4 text-center sm:text-left">Select a contact to start chatting!</p>
+        <h2 className=" font-semibold mb-4 text-white sm-custom:text-lg sm:text-xl lg:text-3xl">Welcome to H-Messenger</h2>
+        <p className="text-gray-400 mb-4 text-center ">Select a contact to start chatting!</p>
       </div>
 
       {/* Message Input and Action Buttons */}
@@ -35,18 +35,18 @@ const ChatSection = () => {
             value={message}
             onChange={handleMessageChange}
             placeholder="Type your message..."
-            className="w-full p-3 pl-4 pr-16 rounded-full bg-gray-800 text-white focus:outline-none border border-blackv1"
+            className="w-full p-3 pl-4 pr-16 rounded-full bg-gray-800 text-white sm-custom:text-[12px] sm:text-[16px] focus:outline-none border border-blackv1"
           />
 
           {/* Picture Button inside the input box */}
-          <button className="absolute top-1/2 right-[80px] transform -translate-y-1/2 text-gray-400 hover:text-white">
+          <button className="absolute top-1/2 sm:right-[80px] sm-custom:right-[60px] transform -translate-y-1/2 text-gray-400 hover:text-white">
             <FontAwesomeIcon icon={faImage} size="lg" />
           </button>
 
           {/* Send Button inside the input box */}
           <button
             onClick={handleSend}
-            className="absolute top-1/2 right-[40px] transform -translate-y-1/2 text-gray-400 hover:text-white"
+            className="absolute top-1/2 sm:right-[40px] sm-custom:right-[20px] transform -translate-y-1/2 text-gray-400 hover:text-white"
           >
             <FontAwesomeIcon icon={faPaperPlane} size="lg" />
           </button>
