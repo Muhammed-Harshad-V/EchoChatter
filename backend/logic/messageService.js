@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const PrivateChat = require('../models/PrivateChat');
 const MessageQueue = require('../models/MessageQueue');
 const GroupChat = require('../models/GroupChat');
-const GroupMessageQueue = require('../models/groupMessageQueue');
+const GroupMessageQueue = require('../models/GroupMessageQueue');
 const clients = {}; // Store WebSocket connections by username
 
 // Function to add messages to MongoDB queue for offline users (private messages)
@@ -27,13 +27,14 @@ const addMessageToGroupQueue = async (username, groupName, message) => {
 
 // Function to store a private message in the database
 const storePrivateMessage = async (sender, receiver, message) => {
+  console.log(sender, receiver, message)
   let privateChat = await PrivateChat.findOne({
-    participants: { $all: [sender, receiver] }
+    participant: { $all: [sender, receiver] }
   });
 
   if (!privateChat) {
     privateChat = new PrivateChat({
-      participants: [sender, receiver],
+      participant: [sender, receiver],
       messages: [{
         sender,
         content: message,
@@ -53,16 +54,23 @@ const storePrivateMessage = async (sender, receiver, message) => {
 
 // Function to send a private message to a user (online or offline)
 const sendMessageToUser = async (senderUsername, receiverUsername, message) => {
-  const formattedMessage = message;
+  const formattedMessage = {
+    type: 'private',
+    receiver: receiverUsername,
+    sender: senderUsername,
+    message,
+    timestamp: new Date(),
+  };
 
   const receiverClient = clients[receiverUsername];
 
   // Store the message in the database
-  await storePrivateMessage(senderUsername, receiverUsername, formattedMessage);
+  await storePrivateMessage(senderUsername, receiverUsername, message);
 
   if (receiverClient) {
     // Send message if user is online
-    receiverClient.ws.send(formattedMessage);
+    console.log(` formatted messege : ${formattedMessage}`)
+    receiverClient.ws.send(JSON.stringify(formattedMessage));
   } else {
     // Otherwise, queue the message for the user
     await addMessageToQueue(receiverUsername, formattedMessage);
@@ -70,26 +78,25 @@ const sendMessageToUser = async (senderUsername, receiverUsername, message) => {
 };
 
 // Function to create or update a group chat message
-const sendMessageToGroup = async (groupName, sender, reciever, message) => {
-  // Find existing group chat or create a new one
+const sendMessageToGroup = async (groupName, sender, receiver, message) => {
   let groupChat = await GroupChat.findOne({ name: groupName });
 
   const formattedMessage = {
+    type: 'group',
+    groupName: groupName,
     sender: sender,
     message: message,
     timestamp: new Date(),
   };
 
   if (!groupChat) {
-    // If no group chat exists, create a new one
     groupChat = new GroupChat({
       name: groupName,
-      participants: [sender, reciever], // Start with the sender's username
+      participants: [sender, receiver], // Start with sender
       messages: [formattedMessage],
     });
     await groupChat.save();
   } else {
-    // Add the message to the existing group chat
     groupChat.messages.push(formattedMessage);
     await groupChat.save();
   }
@@ -98,7 +105,7 @@ const sendMessageToGroup = async (groupName, sender, reciever, message) => {
   groupChat.participants.forEach(participant => {
     const client = clients[participant];
     if (client) {
-      client.ws.send(`[${groupName}] ${sender}: ${message}`);
+      client.ws.send(JSON.stringify(formattedMessage));
     } else {
       // Queue the group message for offline users
       addMessageToGroupQueue(participant, groupName, `${sender}: ${message}`);
@@ -106,50 +113,62 @@ const sendMessageToGroup = async (groupName, sender, reciever, message) => {
   });
 };
 
-// Function to send stored private messages for a user
-const sendStoredPrivateMessages = async (ws, username) => {
-  const privateChats = await PrivateChat.find({ participants: username });
-  privateChats.forEach(chat => {
-    chat.messages.forEach(msg => {
-      const formattedMessage = `${msg.sender}: ${msg.content}`;
-      ws.send(formattedMessage);
-    });
-  });
-};
+// Function to send all stored private and group messages for a user
+const sendAllMessages = async (ws, username) => {
+  // Send all private chat messages for the user
+  const privateChats = await PrivateChat.find({ participant: username });
+  const privateMessages = privateChats.map(chat => {
+    return chat.messages.map(msg => ({
+      type: 'private',
+      receiver: chat.participant.find(p => p !== username), // The other participant
+      sender: msg.sender,
+      message: msg.content,
+      timestamp: msg.timestamp,
+    }));
+  }).flat(); // Flatten the array of messages
 
-// Function to send stored group messages for a user
-const sendStoredGroupMessages = async (ws, username) => {
-  const groupQueues = await GroupChat.find({ participants: username });
-  for (let queue of groupQueues) {
-    // Send queued group messages
-    queue.messages.forEach(msg => {
-      ws.send(`[${queue.name}] ${msg.sender}: ${msg.message}`);
-    });
-  }
-};
+  // Send all group chat messages for the user
+  const groupChats = await GroupChat.find({ participants: username });
+  const groupMessages = groupChats.map(chat => {
+    return chat.messages.map(msg => ({
+      type: 'group',
+      groupName: chat.name,
+      sender: msg.sender,
+      message: msg.message,
+      timestamp: msg.timestamp,
+    }));
+  }).flat(); // Flatten the array of messages
 
-// Handle WebSocket connection (join group or private chat)
-const handleConnection = async (ws, username) => {
-  clients[username] = { ws };
+  // Combine private and group messages and send them all at once
+  const allMessages = [...privateMessages, ...groupMessages];
+  
+  // Send all messages to the frontend
+  ws.send(JSON.stringify({
+    action: 'allMessages',
+    messages: allMessages,
+  }));
 
-  // Send queued private messages
+  // Send queued private messages for this user
   let queue = await MessageQueue.findOne({ username });
   if (queue) {
-    queue.messages.forEach(msg => ws.send(msg)); // Send queued messages
+    queue.messages.forEach(msg => ws.send(JSON.stringify(msg))); // Send queued messages
     await MessageQueue.deleteOne({ username }); // Clear the queue
   }
-  // Send queued groupchat messages
+
+  // Send queued group messages
   let groupQueue = await GroupMessageQueue.findOne({ username });
   if (groupQueue) {
     groupQueue.messages.forEach(msg => ws.send(msg)); // Send queued messages
     await GroupMessageQueue.deleteOne({ username }); // Clear the queue
   }
+};
 
-  // Send queued group messages for the user
-  await sendStoredGroupMessages(ws, username);
+// Handle WebSocket connection
+const handleConnection = async (ws, username) => {
+  clients[username] = { ws };
 
-  // Send stored private messages for the user
-  await sendStoredPrivateMessages(ws, username);
+  // Send all messages when the user connects
+  await sendAllMessages(ws, username);
 };
 
 // Handle WebSocket disconnection (remove user)
@@ -165,6 +184,7 @@ const handleDisconnection = async (ws) => {
 // Handle incoming messages from clients
 const handleMessage = async (ws, message) => {
   const { type, sender, receiver, group, content } = message;
+  console.log(content)
 
   // Private message handling
   if (type === 'private') {

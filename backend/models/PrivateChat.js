@@ -1,7 +1,7 @@
 const string = require('mongoose');
 
 const privateChatSchema = new string.Schema({
-    participants: [{ type: String, required: true }], // Array of User IDs
+    participant: [{ type: String, required: true }], // Array of User IDs
     messages: [
         {
             sender: { type: String, required: true },

@@ -51,10 +51,6 @@ wss.on('connection', async (ws, username) => {
 
     // Listen for incoming messages
     ws.on('message', async (data) => {
-        console.log(`Message received from ${username}: ${data.toString()}`);
-        console.log({data});
-        console.log(typeof(data))
-        console.log(data)
                 // Check if data is a Buffer
             if (Buffer.isBuffer(data)) {
                 data = data.toString();  // Convert buffer to string
@@ -75,14 +71,6 @@ wss.on('connection', async (ws, username) => {
 
         console.log('Parsed message:', parsedMessage);
             const { type, sender, receiver, group, content } = parsedMessage;  // Expecting { type, sender, receiver, group, content }
-            
-
-             // Log the values for debugging
-        console.log('Message Type:', type);
-        console.log('Sender:', sender);
-        console.log('Receiver:', receiver);
-        console.log('Group:', group);
-        console.log('Content:', content);
 
             if (type === 'private') {
                 await handleMessage(ws, parsedMessage);  // Private message
