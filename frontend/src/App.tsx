@@ -1,7 +1,8 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import HomePage from "./pages/home/HomePage";
-import LoginPage from "./pages/loginpage/LoginPAge";
 import Navbar from "./pages/navbar/Navbar";
+import IndivitualChat from "./Components/home/IndivitualChat";
+import LoginPage from "./pages/loginpage/LoginPage";
 
 
 
@@ -16,7 +17,13 @@ function App() {
       children: [
         {
         path: "/",
-        element: <HomePage/>
+        element: <HomePage/>,
+        children: [
+          {
+            path: "/contact/:username",
+            element: <IndivitualChat/>
+          },
+        ]
       },
         {
         path: "/login",

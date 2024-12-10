@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 
-const LoginPage = () => {
+const LoginComponent = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
@@ -82,4 +82,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default LoginComponent;
