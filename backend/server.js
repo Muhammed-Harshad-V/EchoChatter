@@ -70,7 +70,7 @@ wss.on('connection', async (ws, username) => {
         }
 
         console.log('Parsed message:', parsedMessage);
-            const { type, sender, receiver, group, content } = parsedMessage;  // Expecting { type, sender, receiver, group, content }
+            const { type, sender, receiver, name, content } = parsedMessage;  // Expecting { type, sender, receiver, group, content }
 
             if (type === 'private') {
                 await handleMessage(ws, parsedMessage);  // Private message

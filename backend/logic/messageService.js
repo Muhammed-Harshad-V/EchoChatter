@@ -78,12 +78,12 @@ const sendMessageToUser = async (senderUsername, receiverUsername, message) => {
 };
 
 // Function to create or update a group chat message
-const sendMessageToGroup = async (groupName, sender, receiver, message) => {
-  let groupChat = await GroupChat.findOne({ name: groupName });
+const sendMessageToGroup = async (name, sender, receiver, message) => {
+  let groupChat = await GroupChat.findOne({ name: name });
 
   const formattedMessage = {
     type: 'group',
-    groupName: groupName,
+    groupName: name,
     sender: sender,
     message: message,
     timestamp: new Date(),
@@ -91,7 +91,7 @@ const sendMessageToGroup = async (groupName, sender, receiver, message) => {
 
   if (!groupChat) {
     groupChat = new GroupChat({
-      name: groupName,
+      name: name,
       participants: [sender, receiver], // Start with sender
       messages: [formattedMessage],
     });
@@ -108,45 +108,37 @@ const sendMessageToGroup = async (groupName, sender, receiver, message) => {
       client.ws.send(JSON.stringify(formattedMessage));
     } else {
       // Queue the group message for offline users
-      addMessageToGroupQueue(participant, groupName, `${sender}: ${message}`);
+      addMessageToGroupQueue(participant, name, formattedMessage);
     }
   });
 };
 
 // Function to send all stored private and group messages for a user
 const sendAllMessages = async (ws, username) => {
-  // Send all private chat messages for the user
-  const privateChats = await PrivateChat.find({ participant: username });
-  const privateMessages = privateChats.map(chat => {
-    return chat.messages.map(msg => ({
-      type: 'private',
-      receiver: chat.participant.find(p => p !== username), // The other participant
-      sender: msg.sender,
-      message: msg.content,
-      timestamp: msg.timestamp,
-    }));
-  }).flat(); // Flatten the array of messages
+  try {
+       // Fetch all private chats for the user
+       const privateChats = await PrivateChat.find({ participant: username });
+       const privateChatsWithType = privateChats.map(chat => ({
+         ...chat.toObject(), // Convert Mongoose document to plain object
+         type: 'private',
+       }));
+   
+       // Fetch all group chats for the user
+       const groupChats = await GroupChat.find({ participants: username });
+       const groupChatsWithType = groupChats.map(chat => ({
+         ...chat.toObject(), // Convert Mongoose document to plain object
+         type: 'group',
+       }));
 
-  // Send all group chat messages for the user
-  const groupChats = await GroupChat.find({ participants: username });
-  const groupMessages = groupChats.map(chat => {
-    return chat.messages.map(msg => ({
-      type: 'group',
-      groupName: chat.name,
-      sender: msg.sender,
-      message: msg.message,
-      timestamp: msg.timestamp,
-    }));
-  }).flat(); // Flatten the array of messages
+    // Combine all messages into a single array
+    const allMessages = [...privateChatsWithType, ...groupChatsWithType];
 
-  // Combine private and group messages and send them all at once
-  const allMessages = [...privateMessages, ...groupMessages];
-  
-  // Send all messages to the frontend
-  ws.send(JSON.stringify({
-    action: 'allMessages',
-    messages: allMessages,
-  }));
+    // Send the messages to the client
+    ws.send(JSON.stringify(allMessages));
+  } catch (error) {
+    console.error("Error fetching messages:", error);
+    ws.send(JSON.stringify({ error: "Failed to fetch messages" }));
+  }
 
   // Send queued private messages for this user
   let queue = await MessageQueue.findOne({ username });
@@ -158,7 +150,7 @@ const sendAllMessages = async (ws, username) => {
   // Send queued group messages
   let groupQueue = await GroupMessageQueue.findOne({ username });
   if (groupQueue) {
-    groupQueue.messages.forEach(msg => ws.send(msg)); // Send queued messages
+    groupQueue.messages.forEach(msg => ws.send(JSON.stringify(msg))); // Send queued messages
     await GroupMessageQueue.deleteOne({ username }); // Clear the queue
   }
 };
@@ -183,7 +175,7 @@ const handleDisconnection = async (ws) => {
 
 // Handle incoming messages from clients
 const handleMessage = async (ws, message) => {
-  const { type, sender, receiver, group, content } = message;
+  const { type, sender, receiver, name, content } = message;
   console.log(content)
 
   // Private message handling
@@ -193,7 +185,7 @@ const handleMessage = async (ws, message) => {
 
   // Group message handling
   if (type === 'group') {
-    await sendMessageToGroup(group, sender, receiver, content);
+    await sendMessageToGroup(name, sender, receiver, content);
   }
 };
 
