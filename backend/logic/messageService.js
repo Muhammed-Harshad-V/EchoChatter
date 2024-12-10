@@ -78,7 +78,6 @@ const sendAllMessages = async (ws, senderUsername, receiverUsername) => {
     });
 
     const formattedMessages = privateChats.map(chat => ({
-      type: 'private',
       receiver: receiverUsername,
       sender: senderUsername,
       messages: chat.messages,

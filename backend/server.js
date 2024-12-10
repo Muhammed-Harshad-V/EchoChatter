@@ -32,13 +32,13 @@ server.on('upgrade', (request, socket, head) => {
     const pathSegments = request.url.split('/');  // Split the URL by '/'
 
     // Extract receiver and sender from the URL
-    const reciever = pathSegments[1];   // This is the sender (self)Receiver is the 4th segment in the URL
+    const receiver = pathSegments[1];   // This is the sender (self)Receiver is the 4th segment in the URL
     const sender = pathSegments[2];  // This is the receiver (username)
-    console.log(`reciever ${reciever}`)
+    console.log(`reciever ${receiver}`)
     console.log(`senter ${sender}`)
 
     // If no username, reject the connection
-    if (!reciever) {
+    if (!receiver) {
         socket.write('HTTP/1.1 400 Bad Request\r\n\r\n');
         socket.destroy();
         return;
@@ -46,16 +46,16 @@ server.on('upgrade', (request, socket, head) => {
 
     // Upgrade the connection to WebSocket and pass username along
     wss.handleUpgrade(request, socket, head, (ws) => {
-        wss.emit('connection', ws, reciever , sender); // Emit the connection event with ws and username
+        wss.emit('connection', ws, receiver , sender); // Emit the connection event with ws and username
     });
 });
 
 // WebSocket Connection Handling
-wss.on('connection', async (ws, reciever, sender) => {
+wss.on('connection', async (ws, receiver, sender) => {
     console.log(`${sender} connected via WebSocket`);
 
     // Handle the new WebSocket connection
-    await handleConnection(ws, sender);
+    await handleConnection(ws, sender, receiver);
 
     // Listen for incoming messages
     ws.on('message', async (data) => {

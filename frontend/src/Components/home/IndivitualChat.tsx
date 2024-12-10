@@ -3,6 +3,11 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPaperPlane, faImage } from "@fortawesome/free-solid-svg-icons";
 import { useParams } from "react-router-dom";
 
+interface Message {
+    sender: string;
+    content: string;
+  }
+
 // Define the WebSocket URL (change as needed)
 const socketUrl = "ws://localhost:3000";  // Replace with your server WebSocket URL
 
@@ -11,8 +16,9 @@ const IndivitualChat = () => {
   const self = "dev";  // The current user (change as necessary)
 
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState<{ sender: string; text: string }[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [socket, setSocket] = useState<WebSocket | null>(null);  // To store the WebSocket connection
+  console.log(` messeges usestate ${messages}`)
 
   // Handle message input change
   const handleMessageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -23,9 +29,9 @@ const IndivitualChat = () => {
   const handleSend = () => {
     if (message.trim() && socket) {
       // Send the message to the WebSocket server
-      const messageData = { sender: self, recipient: username, text: message };
+      const messageData = { type: 'private', sender: self, receiver: username, content: message };
       socket.send(JSON.stringify(messageData)); // Send as JSON string
-      setMessages([...messages, { sender: self, text: message }]); // Add to local chat
+      setMessages([...messages, { sender: self, content: message }]); // Add to local chat
       setMessage(""); // Clear input after sending
     }
   };
@@ -47,16 +53,42 @@ const IndivitualChat = () => {
       );
     };
 
-    // Listen for incoming messages from other users
-    socketConnection.onmessage = (event) => {
-      const msg = JSON.parse(event.data);
-      setMessages((prevMessages) => [...prevMessages, msg]); // Append new message
-    };
-
-    // Handle WebSocket errors
-    socketConnection.onerror = (error) => {
-      console.error("WebSocket Error: ", error);
-    };
+ // Listen for incoming messages from other users
+socketConnection.onmessage = (event) => {
+    try {
+      // Parse the incoming message from JSON
+      const data = JSON.parse(event.data);
+      console.log("Received Data:", data);
+  
+      // Extract messages from the data
+      if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0].messages)) {
+        const dataMessages = data[0].messages;  // Access the messages from the first object in the array
+        console.log("Messages:", messages);
+  
+        // Flatten the messages and map them to the required format
+        const incomingMessages: Message[] = dataMessages.map((message: any) => ({
+          sender: message.sender,
+          content: message.content,  // Assuming 'content' contains the message text
+        }));
+  
+        console.log("Incoming Messages:", incomingMessages);
+  
+        // Append new messages to the existing ones in state (flattening the array)
+        setMessages((prevMessages) => [...prevMessages, ...incomingMessages]);  // Flattening using '...'
+      } else {
+        console.log("No valid messages found in the data.");
+      }
+  
+    } catch (error) {
+      console.error("Error processing incoming message:", error);
+    }
+  };
+  
+  // Handle WebSocket error
+  socketConnection.onerror = (error) => {
+    console.error("WebSocket Error: ", error);
+  };
+  
 
     // Cleanup WebSocket connection when the component is unmounted
     return () => {
@@ -91,28 +123,32 @@ const IndivitualChat = () => {
       {/* Chat Messages Section */}
       <div className="flex flex-col lg:h-[calc(100vh-128px)] sm-custom:h-[calc(100vh-110px)] w-full bg-blackv1">
         <div className="flex-1 bg-blackv1 p-6 sm-custom:p-[10px] sm:p-[18px] flex flex-col justify-start items-start overflow-y-auto scrollbar-thin scrollbar-thumb-blackv1 scrollbar-track-transparent">
+            <div className="w-full">
           {/* Displaying Messages */}
           {messages.length > 0 ? (
             messages.map((message, index) => (
               <div key={index} className="flex items-start mb-4">
-                {/* Message Content */}
-                <div className={`flex flex-col max-w-xs ${message.sender === self ? "items-end" : "items-start"}`}>
-                  {/* Chat Header */}
-                  <div className="chat-header text-sm font-semibold text-white text-left">
-                    {message.sender}
-                  </div>
+                   <div className={` ${message.sender === self ? "ml-auto" : ""}`}>
+                    </div>
+                    {/* Message Content */}
+                    <div className={`flex flex-col max-w-xs ${message.sender === self ? "items-end" : "items-start"}`}>
+                    {/* Chat Header */}
+                    <div className="chat-header text-sm font-semibold text-white text-left">
+                        {message.sender}
+                    </div>
 
-                  {/* Chat Bubble */}
-                  <div className={`rounded-lg p-2 ${message.sender === self ? "bg-blue-500 text-white" : "bg-gray-600 text-white"}`}>
-                    {message.text}
-                  </div>
-                </div>
+                    {/* Chat Bubble */}
+                    <div className={`rounded-lg p-2 ${message.sender === self ? "bg-blue-500 text-white" : "bg-gray-600 text-white"}`}>
+                        {message.content}
+                    </div>
+                    </div> 
               </div>
             ))
           ) : (
             <p className="text-gray-400">No messages yet</p>
           )}
         </div>
+            </div>
 
         {/* Message Input and Action Buttons */}
         <div className="flex items-center p-4 bg-black border-gray-600">
@@ -146,4 +182,3 @@ const IndivitualChat = () => {
 };
 
 export default IndivitualChat;
-
