@@ -14,7 +14,6 @@ const socketUrl = "ws://localhost:3000"; // Replace with your WebSocket server U
 
 const IndivitualChat = () => {
   const { chatId } = useParams<{ chatId: string }>(); // Capture dynamic chatId from URL
-  console.log(chatId)
   const self = "dev"; // The current user (change as necessary)
 
   const [message, setMessage] = useState("");
@@ -24,8 +23,8 @@ const IndivitualChat = () => {
   const listRef = useRef<List | null>(null); // Ref for the List component
 
   // Determine if it's a group or private chat
-  const isGroupChat = chatId && chatId.startsWith("group:"); // Check if the chatId starts with 'group:'
-  const chatIdentifier = isGroupChat ? chatId.substring(6) : chatId; // Remove "group:" prefix if it's a group chat
+  const isGroupChat = chatId && chatId.includes("group"); // Check if the chatId starts with 'group:'
+  const chatIdentifier = isGroupChat ? chatId?.split("-")[chatId?.split("-").length - 1] : chatId; // Remove "group:" prefix if it's a group chat
 
   // Clear previous messages when changing chats
   useEffect(() => {
@@ -51,8 +50,10 @@ const IndivitualChat = () => {
       try {
         let data = JSON.parse(event.data);
         data = Array.isArray(data) ? data : [data];
+        console.log(data)
         if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0].messages)) {
           const dataMessages = data[0].messages;
+          console.log(dataMessages)
           const incomingMessages: Message[] = dataMessages.map((message: any) => ({
             sender: message.sender,
             content: message.content,
@@ -94,11 +95,10 @@ const IndivitualChat = () => {
         <div className={`${isSender ? "ml-auto" : ""}`}>
           <div className={`flex flex-col max-w-xs ${isSender ? "items-end" : "items-start"}`}>
             {/* Display sender name for group chats */}
-            {isGroupChat && !isSender && (
               <div className="chat-header text-sm font-semibold text-white text-left">
                 {message.sender}
               </div>
-            )}
+
             <div
               className={`rounded-lg p-2 ${
                 isSender ? "bg-blue-500 text-white" : "bg-gray-600 text-white"
@@ -132,6 +132,7 @@ const IndivitualChat = () => {
         receiver: chatIdentifier,
         content: message,
       };
+      console.log(messageData)
       socket.send(JSON.stringify(messageData)); // Send message via WebSocket
       setMessages((prevMessages) => [
         ...prevMessages,
@@ -149,7 +150,7 @@ const IndivitualChat = () => {
 
   const userData = {
     profilePicture: "https://via.placeholder.com/53",
-    name: isGroupChat ? `Group: ${chatIdentifier}` : chatIdentifier, // For group chat, show group name
+    name: chatIdentifier // For group chat, show group name
   };
 
   return (
@@ -162,7 +163,7 @@ const IndivitualChat = () => {
         />
         <div className="ml-3">
           <h1 className="sm-custom:text-sm sm:text-sm lg:text-lg font-semibold text-white">
-            {userData.name || "Username"}
+            {userData.name || chatIdentifier}
           </h1>
         </div>
       </div>

@@ -112,7 +112,7 @@ const Contact = () => {
             {contacts.map((contact, index) => (
               <NavLink
                 key={index}
-                to={contact.type === 'private' ? `/contact/${contact.data.username}` : `/contact/group/${contact.data.name}`}
+                to={contact.type === 'private' ? `/contact/${contact.data.username}` : `/contact/group-${contact.data.name}`}
                 className={({ isActive }) =>
                   `block p-3 rounded-2xl text-gray-300 ${isActive ? 'bg-blackv1' : ''}` // Apply active styles
                 }

@@ -71,6 +71,7 @@ const sendAllMessages = async (ws, senderUsername, receiverUsername) => {
     });
 
     const formattedMessages = privateChats.map(chat => ({
+      type: 'private',
       receiver: receiverUsername,
       sender: senderUsername,
       messages: chat.messages,
@@ -99,7 +100,7 @@ const storeGroupMessage = async (sender, groupName, content) => {
     groupChat.messages.push({
       sender,
       receiver: groupName,  // Group name as the receiver
-      message: content,
+      content: content,
       timestamp: new Date(),
     });
 
@@ -182,6 +183,7 @@ const handleConnection = async (ws, senderUsername, receiverUsername) => {
 
   // Send all existing messages between the two users
   await sendAllMessages(ws, senderUsername, receiverUsername);
+  await sendAllGroupMessages(ws, senderUsername, receiverUsername);
 };
 
 // Handle WebSocket disconnection (remove user)
@@ -205,7 +207,7 @@ const handleMessage = async (ws, message) => {
   }
 
   // Handle group messages
-  if (type === 'group' && receiver) {
+  if (type === 'group') {
     // Store the group message
     await storeGroupMessage(sender, receiver, content);
 

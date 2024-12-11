@@ -23,6 +23,10 @@ function App() {
             path: "/contact/:chatId",
             element: <IndivitualChat/>
           },
+          {
+            path: "/contact/group:chatId",
+            element: <IndivitualChat/>
+          },
         ]
       },
         {

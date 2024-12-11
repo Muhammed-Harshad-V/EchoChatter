@@ -14,15 +14,12 @@ const groupChatSchema = new mongoose.Schema({
   messages: [{          // List of messages in the group chat
     sender: { 
       type: String,  // Sender's username (string)
-      required: true
     },
      receiver: { 
       type: String,  // Sender's username (string)
-      required: true
     },
-    message: {
+    content: {
       type: String,
-      required: true,
     },
     timestamp: {
       type: Date,
