@@ -33,24 +33,22 @@ const storePrivateMessage = async (sender, receiver, message) => {
 // Function to send a private message to a user (online or offline)
 const sendMessageToUser = async (senderUsername, receiverUsername, message) => {
  
-  const formattedMessage = {
-    content: message,
-    sender: senderUsername,
-    timestamp: new Date(),
-  }
-
   const messageToSent = {
     type: 'private',
     receiver: receiverUsername,
     sender: senderUsername,
-    messages: [formattedMessage],
+    messages: [{
+      sender: senderUsername,
+      content: message,
+      timestamp: new Date(),
+    }],
   };
 
   try {
     // Store the message in the database
     await storePrivateMessage(senderUsername, receiverUsername, message);
 
-    // Check if the recipient is online
+    // Check if the arecipient is online
     const client = connections[receiverUsername];
     if (client && client.ws) {
       // Send message if the recipient is online
@@ -86,6 +84,97 @@ const sendAllMessages = async (ws, senderUsername, receiverUsername) => {
   }
 };
 
+const storeGroupMessage = async (sender, groupName, content) => {
+  try {
+    // Find the group chat by group name
+    const groupChat = await GroupChat.findOne({ name: groupName });
+
+    if (!groupChat) {
+      // If the group doesn't exist, return an error
+      console.error(`Group "${groupName}" not found.`);
+      return;
+    }
+
+    // Add the new message to the group's message array
+    groupChat.messages.push({
+      sender,
+      receiver: groupName,  // Group name as the receiver
+      message: content,
+      timestamp: new Date(),
+    });
+
+    // Save the updated group chat document
+    await groupChat.save();
+    console.log(`Group message stored for group: ${groupName}`);
+  } catch (error) {
+    console.error(`Failed to store message in group ${groupName}:`, error);
+  }
+};
+
+
+const sendGroupMessageToParticipants = async (sender, groupName, content) => {
+  try {
+    const messageToSend = {
+      type: 'group',
+      sender,
+      receiver: groupName,  // Group name as receiver
+      messages: [{
+        sender,
+        receiver: groupName,  // Group name as receiver
+        content,
+        timestamp: new Date(),
+      }],
+    };
+
+    // Fetch the group chat document
+    const groupChat = await GroupChat.findOne({ name: groupName });
+    if (!groupChat) {
+      console.log(`Group "${groupName}" not found.`);
+      return;
+    }
+
+    // Send the message to all participants in the group who are online
+    groupChat.participants.forEach((participant) => {
+      const client = connections[participant]; // Assuming `connections` holds online users
+      if (client && client.ws) {
+        client.ws.send(JSON.stringify(messageToSend));
+        console.log(`Message sent to ${participant} in group ${groupName}`);
+      } else {
+        console.log(`${participant} is offline. Message not delivered.`);
+      }
+    });
+  } catch (error) {
+    console.error(`Error sending group message to participants:`, error);
+  }
+};
+
+const sendAllGroupMessages = async (ws, senderUsername, groupName) => {
+  try {
+    // Fetch all messages for the group from the database
+    const groupChat = await GroupChat.findOne({ name: groupName });
+    if (!groupChat) {
+      ws.send(JSON.stringify({ error: "Group not found" }));
+      return;
+    }
+
+    // Format the messages to send them back
+    const formattedMessages = {
+      type: 'group',
+      sender: senderUsername,
+      receiver: groupName,  // Group name as receiver
+      messages: groupChat.messages,
+    };
+
+    // Send the group messages to the client
+    ws.send(JSON.stringify(formattedMessages));
+    console.log(`Sent all messages for group: ${groupName}`);
+  } catch (error) {
+    console.error("Error fetching group messages:", error);
+    ws.send(JSON.stringify({ error: "Failed to fetch group messages" }));
+  }
+};
+
+
 // Handle WebSocket connection
 const handleConnection = async (ws, senderUsername, receiverUsername) => {
   // Store the connection in the 'connections' object
@@ -115,9 +204,13 @@ const handleMessage = async (ws, message) => {
     await sendMessageToUser(sender, receiver, content);
   }
 
-  // Handle group message (optional - add if needed)
-  if (type === 'group') {
-    // Add your group chat message logic here (not required in this case)
+  // Handle group messages
+  if (type === 'group' && receiver) {
+    // Store the group message
+    await storeGroupMessage(sender, receiver, content);
+
+    // Send the message to all participants of the group
+    await sendGroupMessageToParticipants(sender, receiver, content);
   }
 };
 

@@ -16,6 +16,10 @@ const groupChatSchema = new mongoose.Schema({
       type: String,  // Sender's username (string)
       required: true
     },
+     receiver: { 
+      type: String,  // Sender's username (string)
+      required: true
+    },
     message: {
       type: String,
       required: true,

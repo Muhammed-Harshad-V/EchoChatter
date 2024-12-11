@@ -20,7 +20,7 @@ function App() {
         element: <HomePage/>,
         children: [
           {
-            path: "/contact/:username",
+            path: "/contact/:chatId",
             element: <IndivitualChat/>
           },
         ]

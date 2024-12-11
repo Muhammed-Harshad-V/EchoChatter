@@ -5,9 +5,14 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import axios from 'axios';
 
 interface Contact {
-  username: string;
-  firstname: string;
-  lastname: string;
+  type: 'private' | 'group';  // Type of contact: private (user) or group
+  data: {
+    username?: string;   // For private contact
+    firstname?: string;  // For private contact
+    lastname?: string;   // For private contact
+    name?: string;       // For group contact
+    participants?: string[]; // For group contact
+  };
 }
 
 const Contact = () => {
@@ -19,14 +24,13 @@ const Contact = () => {
   // Fetch contacts from API
   useEffect(() => {
     const fetchContacts = async () => {
-      // const usernames = ["katie_brown", 'jane_smith', 'michael_jordan', "alex_williams", "chris_evans", "susan_lee", "tom_hanks", 
-      //   "emma_watson", "robert_downey"]; // Replace with actual usernames you want to fetch
-      
-      const usernames = ["tomTaylor", "lisaBrown", "samWilson", "janeSmith", "johnDoe",]; // Replace with actual usernames you want to fetch
-      
+      const usernames = ["katie_brown", 'jane_smith', 'michael_jordan', "alex_williams", "chris_evans", "susan_lee", "tom_hanks", 
+        "emma_watson", "robert_downey"]; // Replace with actual usernames you want to fetch
+      const groupNames = ['Tech_Enthusiasts'];
+
       try {
-        // Send a POST request with the array of usernames
-        const response = await axios.post('http://localhost:3000/api/user/get-users', { usernames });
+        // Send a POST request with the array of usernames and group names
+        const response = await axios.post('http://localhost:3000/api/user/get-users', { usernames, groupNames });
         
         // Update state with fetched data
         setContacts(response.data);
@@ -38,8 +42,7 @@ const Contact = () => {
     };
 
     fetchContacts(); // Call the function to fetch contacts
-  }, []); 
-
+  }, []);
 
   // Handle screen resizing to determine small screen behavior
   useEffect(() => {
@@ -86,13 +89,7 @@ const Contact = () => {
   return (
     <div
       id="drawer"
-      className={`bg-black flex-col flex ${
-        isSmallScreen
-          ? isDrawerExpanded
-            ? 'w-[200px] absolute z-50 h-[calc(100vh-60px)]' // Full width for small screens when expanded
-            : 'w-[70px]' // Collapsed width for small screens
-          : 'w-[320px]' // Full width for larger screens
-      }`}
+      className={`bg-black flex-col flex ${isSmallScreen ? (isDrawerExpanded ? 'w-[200px] absolute z-50 h-[calc(100vh-60px)]' : 'w-[70px]') : 'w-[320px]'}`}
     >
       {/* Header */}
       <div className="flex items-center justify-between lg:p-4 sm:p-2 sm-custom:p-2 z-10">
@@ -100,11 +97,7 @@ const Contact = () => {
           <button onClick={() => setIsDrawerExpanded(!isDrawerExpanded)}>
             <FontAwesomeIcon icon={faComments} style={{ color: '#c9c9c9' }} size="2x" />
           </button>
-          <p
-            className={`${
-              isSmallScreen && !isDrawerExpanded ? 'hidden' : 'block'
-            } text-white text-xl ml-3`}
-          >
+          <p className={`text-white text-xl ml-3 ${isSmallScreen && !isDrawerExpanded ? 'hidden' : 'block'}`}>
             Chat
           </p>
         </div>
@@ -116,10 +109,10 @@ const Contact = () => {
           <div className="text-white text-center p-4">Loading contacts...</div>
         ) : (
           <div className="space-y-2">
-            {contacts.map((contact) => (
+            {contacts.map((contact, index) => (
               <NavLink
-                key={contact.username} // Assuming the backend returns _id for each contact
-                to={`/contact/${contact.username}`} // Use the contact's ID for routing
+                key={index}
+                to={contact.type === 'private' ? `/contact/${contact.data.username}` : `/contact/group/${contact.data.name}`}
                 className={({ isActive }) =>
                   `block p-3 rounded-2xl text-gray-300 ${isActive ? 'bg-blackv1' : ''}` // Apply active styles
                 }
@@ -128,21 +121,15 @@ const Contact = () => {
                   <div className="relative w-10 h-10 rounded-full">
                     <img
                       src={defaultPhotoUrl} // Use default if no photo src={contact. || defaultPhotoUrl} 
-                      alt={contact.firstname}
+                      alt={contact.type === 'private' ? contact.data.firstname : contact.data.name}
                       className="object-cover w-full h-full rounded-full"
                     />
                     <div
-                      className={`absolute bottom-0 right-0 w-[14px] h-[14px] rounded-full ${
-                        contact.username ? 'bg-green-500' : 'bg-gray-500'
-                      }`}
+                      className={`absolute bottom-0 right-0 w-[14px] h-[14px] rounded-full ${contact.type === 'private' ? (contact.data.username ? 'bg-green-500' : 'bg-gray-500') : 'bg-blue-500'}`}
                     ></div>
                   </div>
-                  <span
-                    className={`${
-                      isSmallScreen && !isDrawerExpanded ? 'hidden' : 'block'
-                    }`}
-                  >
-                    {[contact.firstname, " ", contact.lastname]}
+                  <span className={`${isSmallScreen && !isDrawerExpanded ? 'hidden' : 'block'}`}>
+                    {contact.type === 'private' ? `${contact.data.firstname} ${contact.data.lastname}` : contact.data.name}
                   </span>
                 </div>
               </NavLink>

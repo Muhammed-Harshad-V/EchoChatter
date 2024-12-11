@@ -1,5 +1,6 @@
 const express = require("express");
 const User = require("../models/User");
+const GroupChat = require("../models/GroupChat");
 const router = express.Router();
 
 // Register API (Create New User)
@@ -49,28 +50,52 @@ router.post('/user/login', async (req, res) => {
   }
 });
 
-// API to Get Specific User Info based on Array of Usernames
+// API to Get Specific User Info or Group Info based on Array of Usernames/Group Names
 router.post('/user/get-users', async (req, res) => {
-  const { usernames } = req.body; // Array of usernames from the frontend
-  console.log(usernames)
+  const { usernames, groupNames } = req.body; // Array of usernames and/or group names from the frontend
+  console.log(usernames, groupNames);
 
   try {
-    // Check if 'usernames' is an array
-    if (!Array.isArray(usernames)) {
-      return res.status(400).json({ message: 'Usernames must be an array' });
+    let responseData = [];
+
+    // If usernames are provided, query users
+    if (Array.isArray(usernames) && usernames.length > 0) {
+      const users = await User.find({ username: { $in: usernames } })
+        .select('username firstname lastname'); // Only fetch the required fields
+
+      if (users.length > 0) {
+        responseData = responseData.concat(
+          users.map(user => ({
+            type: 'private',  // Type for user data
+            data: user
+          }))
+        );
+      } else {
+        return res.status(404).json({ message: 'No users found for the given usernames' });
+      }
     }
 
-    // Query the database for the users with the given usernames
-    const users = await User.find({ username: { $in: usernames } })
-      .select('username firstname lastname'); // Only fetch the required fields
+    // If groupNames are provided, query groups
+    if (Array.isArray(groupNames) && groupNames.length > 0) {
+      const groups = await GroupChat.find({ name: { $in: groupNames } });
 
-    // Check if any users are found
-    if (users.length === 0) {
-      return res.status(404).json({ message: 'No users found for the given usernames' });
+      if (groups.length > 0) {
+        responseData = responseData.concat(
+          groups.map(group => ({
+            type: 'group',  // Type for group data
+            data: {
+              name: group.name,
+              participants: group.participants
+            }
+          }))
+        );
+      } else {
+        return res.status(404).json({ message: 'No groups found for the given group names' });
+      }
     }
 
-    // Respond with the user data
-    res.status(200).json(users);
+    // Respond with the data for both users and/or groups
+    res.status(200).json(responseData);
 
   } catch (err) {
     console.error(err);
