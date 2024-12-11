@@ -19,8 +19,10 @@ const Contact = () => {
   // Fetch contacts from API
   useEffect(() => {
     const fetchContacts = async () => {
-      const usernames = ["katie_brown", 'jane_smith', 'michael_jordan', "alex_williams", "chris_evans", "susan_lee", "tom_hanks", 
-        "emma_watson", "robert_downey"]; // Replace with actual usernames you want to fetch
+      // const usernames = ["katie_brown", 'jane_smith', 'michael_jordan', "alex_williams", "chris_evans", "susan_lee", "tom_hanks", 
+      //   "emma_watson", "robert_downey"]; // Replace with actual usernames you want to fetch
+      
+      const usernames = ["tomTaylor", "lisaBrown", "samWilson", "janeSmith", "johnDoe",]; // Replace with actual usernames you want to fetch
       
       try {
         // Send a POST request with the array of usernames

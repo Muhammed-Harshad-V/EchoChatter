@@ -1,19 +1,7 @@
 const mongoose = require('mongoose');
 const PrivateChat = require('../models/PrivateChat');
-const MessageQueue = require('../models/MessageQueue');
 const GroupChat = require('../models/GroupChat');
-const GroupMessageQueue = require('../models/GroupMessageQueue');
 const connections = {}; // Store WebSocket connections by pair of usernames
-
-// Function to add messages to MongoDB queue for offline users (private messages)
-const addMessageToQueue = async (username, message) => {
-  let queue = await MessageQueue.findOne({ username });
-  if (!queue) {
-    queue = new MessageQueue({ username, messages: [] });
-  }
-  queue.messages.push(message);
-  await queue.save();
-};
 
 // Function to store a private message in the database
 const storePrivateMessage = async (sender, receiver, message) => {
@@ -44,28 +32,35 @@ const storePrivateMessage = async (sender, receiver, message) => {
 
 // Function to send a private message to a user (online or offline)
 const sendMessageToUser = async (senderUsername, receiverUsername, message) => {
+ 
   const formattedMessage = {
+    content: message,
+    sender: senderUsername,
+    timestamp: new Date(),
+  }
+
+  const messageToSent = {
     type: 'private',
     receiver: receiverUsername,
     sender: senderUsername,
-    message,
-    timestamp: new Date(),
+    messages: [formattedMessage],
   };
 
-  const connectionKey = `${senderUsername}-${receiverUsername}`;
-  const reverseConnectionKey = `${receiverUsername}-${senderUsername}`;
+  try {
+    // Store the message in the database
+    await storePrivateMessage(senderUsername, receiverUsername, message);
 
-  // Store the message in the database
-  await storePrivateMessage(senderUsername, receiverUsername, message);
-
-  // Check if the receiver is online
-  if (connections[connectionKey] || connections[reverseConnectionKey]) {
-    // Send message if user is online
-    const client = connections[connectionKey] || connections[reverseConnectionKey];
-    client.ws.send(JSON.stringify(formattedMessage));
-  } else {
-    // Otherwise, queue the message for the user
-    await addMessageToQueue(receiverUsername, formattedMessage);
+    // Check if the recipient is online
+    const client = connections[receiverUsername];
+    if (client && client.ws) {
+      // Send message if the recipient is online
+      client.ws.send(JSON.stringify(messageToSent));
+      console.log(`Message sent to ${receiverUsername}`);
+    } else {
+      console.log(`User ${receiverUsername} is offline. Message not delivered.`);
+    }
+  } catch (error) {
+    console.error(`Failed to send message to ${receiverUsername}:`, error);
   }
 };
 
@@ -93,12 +88,8 @@ const sendAllMessages = async (ws, senderUsername, receiverUsername) => {
 
 // Handle WebSocket connection
 const handleConnection = async (ws, senderUsername, receiverUsername) => {
-  // Use a unique key to identify the connection between sender and receiver
-  const connectionKey = `${senderUsername}-${receiverUsername}`;
-  const reverseConnectionKey = `${receiverUsername}-${senderUsername}`;
-
   // Store the connection in the 'connections' object
-  connections[connectionKey] = { ws };
+  connections[senderUsername] = { ws };
 
   // Send all existing messages between the two users
   await sendAllMessages(ws, senderUsername, receiverUsername);

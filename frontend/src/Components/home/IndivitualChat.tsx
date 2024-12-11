@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPaperPlane, faImage } from "@fortawesome/free-solid-svg-icons";
 import { useParams } from "react-router-dom";
+import { FixedSizeList as List } from "react-window";  // Import react-window List
 
 interface Message {
-    sender: string;
-    content: string;
-  }
+  sender: string;
+  content: string;
+}
 
-// Define the WebSocket URL (change as needed)
 const socketUrl = "ws://localhost:3000";  // Replace with your server WebSocket URL
 
 const IndivitualChat = () => {
@@ -18,95 +18,106 @@ const IndivitualChat = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [socket, setSocket] = useState<WebSocket | null>(null);  // To store the WebSocket connection
-  console.log(` messeges usestate ${messages}`)
 
-  // Handle message input change
+  const listRef = useRef<List | null>(null);  // Ref for the List component
+
   const handleMessageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setMessage(e.target.value);
   };
 
-  // Handle send button click
   const handleSend = () => {
     if (message.trim() && socket) {
-      // Send the message to the WebSocket server
       const messageData = { type: 'private', sender: self, receiver: username, content: message };
-      socket.send(JSON.stringify(messageData)); // Send as JSON string
-      setMessages([...messages, { sender: self, content: message }]); // Add to local chat
-      setMessage(""); // Clear input after sending
+      socket.send(JSON.stringify(messageData));
+      setMessages((prevMessages) => [...prevMessages, { sender: self, content: message }]);
+      setMessage("");
     }
   };
 
-  // Handle WebSocket connection and events
   useEffect(() => {
-    // Initialize WebSocket connection
-    const socketConnection = new WebSocket(socketUrl + "/" + username + "/" + self);  // Append username to URL if needed
+    setMessages([]);
 
-    // Store the WebSocket connection in state
+    const socketConnection = new WebSocket(socketUrl + "/" + username + "/" + self);
+
     setSocket(socketConnection);
 
-    // Listen for the WebSocket connection open event
     socketConnection.onopen = () => {
       console.log(`WebSocket connection established with ${username}`);
-      // Optionally, send a message on connect if needed
-      socketConnection.send(
-        JSON.stringify({ sender: self, recipient: username, text: "joined the chat" })
-      );
+      socketConnection.send(JSON.stringify({ sender: self, recipient: username, text: "joined the chat" }));
     };
 
- // Listen for incoming messages from other users
-socketConnection.onmessage = (event) => {
-    try {
-      // Parse the incoming message from JSON
-      const data = JSON.parse(event.data);
-      console.log("Received Data:", data);
-  
-      // Extract messages from the data
-      if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0].messages)) {
-        const dataMessages = data[0].messages;  // Access the messages from the first object in the array
-        console.log("Messages:", messages);
-  
-        // Flatten the messages and map them to the required format
-        const incomingMessages: Message[] = dataMessages.map((message: any) => ({
-          sender: message.sender,
-          content: message.content,  // Assuming 'content' contains the message text
-        }));
-  
-        console.log("Incoming Messages:", incomingMessages);
-  
-        // Append new messages to the existing ones in state (flattening the array)
-        setMessages((prevMessages) => [...prevMessages, ...incomingMessages]);  // Flattening using '...'
-      } else {
-        console.log("No valid messages found in the data.");
-      }
-  
-    } catch (error) {
-      console.error("Error processing incoming message:", error);
-    }
-  };
-  
-  // Handle WebSocket error
-  socketConnection.onerror = (error) => {
-    console.error("WebSocket Error: ", error);
-  };
-  
+    socketConnection.onmessage = (event) => {
+      try {
+        let data = JSON.parse(event.data);
+        data = Array.isArray(data) ? data : [data];
+        if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0].messages)) {
+          const dataMessages = data[0].messages;
+          const incomingMessages: Message[] = dataMessages.map((message: any) => ({
+            sender: message.sender,
+            content: message.content,
+          }));
 
-    // Cleanup WebSocket connection when the component is unmounted
+          setMessages((prevMessages) => [...prevMessages, ...incomingMessages]);
+        }
+      } catch (error) {
+        console.error("Error processing incoming message:", error);
+      }
+    };
+
+    socketConnection.onerror = (error) => {
+      console.error("WebSocket Error: ", error);
+    };
+
     return () => {
       if (socketConnection) {
-        socketConnection.close(); // Close WebSocket connection on cleanup
+        socketConnection.close();
         console.log("WebSocket disconnected");
       }
     };
-  }, [username]);  // Dependency on username to handle when it changes
+  }, [username]);
+
+  // Function to render individual message items for the List
+  const renderMessage = ({ index, style }: { index: number; style: React.CSSProperties }) => {
+    const message = messages[index];
+    const isSender = message.sender === self;
+    return (
+      <>
+      <div key={index} style={style} className={`flex items-start mb-4`}>
+            <div className={`${isSender ? "ml-auto" : ""}`}>
+            </div>
+        <div className={`flex flex-col max-w-xs ${isSender ? "items-end" : "items-start"}`}>
+          <div className="chat-header text-sm font-semibold text-white text-left">
+            {message.sender}
+          </div>
+          <div className={`rounded-lg p-2 ${isSender ? "bg-blue-500 text-white" : "bg-gray-600 text-white"}`}>
+            {message.content}
+          </div>
+        </div>
+      </div>
+      </>
+    );
+  };
+
+  // Scroll to bottom logic when new messages arrive
+  useEffect(() => {
+    if (listRef.current) {
+      listRef.current.scrollToItem(messages.length - 1);  // Scroll to the last message
+    }
+  }, [messages]);  // Trigger scroll when messages change
 
   const userData = {
     profilePicture: "https://via.placeholder.com/53",
-    name: username || "Username",  // Display the username dynamically
+    name: username || "Username",
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleSend();
+    }
   };
 
   return (
     <div className="flex-col w-full h-full">
-      {/* Header with User Profile */}
       <div className="flex items-center bg-black px-4 py-3 lg:h-[64px] sm-custom:h-[49px]">
         <img
           src={userData.profilePicture || "https://via.placeholder.com/50"}
@@ -114,64 +125,39 @@ socketConnection.onmessage = (event) => {
           className="lg:w-10 lg:h-10 sm-custom:w-8 sm-custom:h-8 rounded-full"
         />
         <div className="ml-3">
-          <h1 className="sm-custom:text-sm sm:text-sm lg:text-lg font-semibold text-white">
-            {userData.name || "Username"}
-          </h1>
+          <h1 className="sm-custom:text-sm sm:text-sm lg:text-lg font-semibold text-white">{userData.name || "Username"}</h1>
         </div>
       </div>
 
-      {/* Chat Messages Section */}
       <div className="flex flex-col lg:h-[calc(100vh-128px)] sm-custom:h-[calc(100vh-110px)] w-full bg-blackv1">
-        <div className="flex-1 bg-blackv1 p-6 sm-custom:p-[10px] sm:p-[18px] flex flex-col justify-start items-start overflow-y-auto scrollbar-thin scrollbar-thumb-blackv1 scrollbar-track-transparent">
-            <div className="w-full">
-          {/* Displaying Messages */}
-          {messages.length > 0 ? (
-            messages.map((message, index) => (
-              <div key={index} className="flex items-start mb-4">
-                   <div className={` ${message.sender === self ? "ml-auto" : ""}`}>
-                    </div>
-                    {/* Message Content */}
-                    <div className={`flex flex-col max-w-xs ${message.sender === self ? "items-end" : "items-start"}`}>
-                    {/* Chat Header */}
-                    <div className="chat-header text-sm font-semibold text-white text-left">
-                        {message.sender}
-                    </div>
-
-                    {/* Chat Bubble */}
-                    <div className={`rounded-lg p-2 ${message.sender === self ? "bg-blue-500 text-white" : "bg-gray-600 text-white"}`}>
-                        {message.content}
-                    </div>
-                    </div> 
-              </div>
-            ))
-          ) : (
-            <p className="text-gray-400">No messages yet</p>
-          )}
+        <div className="flex-1 bg-blackv1 p-6 sm-custom:p-[10px] sm:p-[18px] flex flex-col justify-start items-start">
+          <List
+            ref={listRef}  // Attach the ref to the List component
+            height={window.innerHeight - 250}  // Adjust the height according to your layout
+            itemCount={messages.length}
+            itemSize={80}  // Adjust item height as per your design
+            width="100%"
+            className="overflow-y-auto scrollbar-thin scrollbar-thumb-blackv1 scrollbar-track-transparent"
+          >
+            {renderMessage}
+          </List>
         </div>
-            </div>
 
-        {/* Message Input and Action Buttons */}
         <div className="flex items-center p-4 bg-black border-gray-600">
-          {/* Message Text Area with buttons inside */}
           <div className="flex-1 relative">
             <input
               type="text"
               value={message}
               onChange={handleMessageChange}
+              onKeyDown={handleKeyDown}
               placeholder="Type your message..."
               className="w-full p-3 pl-4 pr-16 rounded-full bg-gray-800 text-white sm-custom:text-[12px] sm:text-[16px] focus:outline-none border border-blackv1"
             />
-
-            {/* Picture Button inside the input box */}
             <button className="absolute top-1/2 sm:right-[80px] sm-custom:right-[60px] transform -translate-y-1/2 text-gray-400 hover:text-white">
               <FontAwesomeIcon icon={faImage} size="lg" />
             </button>
 
-            {/* Send Button inside the input box */}
-            <button
-              onClick={handleSend}
-              className="absolute top-1/2 sm:right-[40px] sm-custom:right-[20px] transform -translate-y-1/2 text-gray-400 hover:text-white"
-            >
+            <button onClick={handleSend} className="absolute top-1/2 sm:right-[40px] sm-custom:right-[20px] transform -translate-y-1/2 text-gray-400 hover:text-white">
               <FontAwesomeIcon icon={faPaperPlane} size="lg" />
             </button>
           </div>
