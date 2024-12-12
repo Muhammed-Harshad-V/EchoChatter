@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { faComments } from '@fortawesome/free-solid-svg-icons';
+import { faComments, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import axios from 'axios';
 
 interface Contact {
-  type: 'private' | 'group';  // Type of contact: private (user) or group
+  type: 'private' | 'group'; // Type of contact: private (user) or group
   data: {
     username?: string;   // For private contact
     firstname?: string;  // For private contact
@@ -15,25 +15,63 @@ interface Contact {
   };
 }
 
+interface privateData {
+  username?: string;   // For private contact
+  firstname?: string;  // For private contact
+  lastname?: string;
+}
+
+interface group {
+  groupname?: string;
+  participants?: string[];
+}
+
 const Contact = () => {
   const [isDrawerExpanded, setIsDrawerExpanded] = useState(false); // Controls full drawer open/close
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 768); // Tracks if screen width is <768px
   const [contacts, setContacts] = useState<Contact[]>([]); // State to store the contact list data
   const [loading, setLoading] = useState(true); // State to handle loading status
+  const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
+  const [newContactData, setNewContactData] = useState({ name: '', username: '', participants: '' }); // For form data
+  console.log(isModalOpen); // Debugging statement
 
   // Fetch contacts from API
   useEffect(() => {
     const fetchContacts = async () => {
-      const usernames = ["katie_brown", 'jane_smith', 'michael_jordan', "alex_williams", "chris_evans", "susan_lee", "tom_hanks", 
-        "emma_watson", "robert_downey"]; // Replace with actual usernames you want to fetch
-      const groupNames = ['Tech_Enthusiasts'];
+      const Username = localStorage.getItem('username'); // Get username from localStorage
+
+      if (!Username) {
+        console.error('Username not found in localStorage');
+        return;
+      }
 
       try {
-        // Send a POST request with the array of usernames and group names
-        const response = await axios.post('http://localhost:3000/api/user/get-users', { usernames, groupNames });
+        // Make an API request to get the contacts based on the username
+        const response = await axios.get(`http://localhost:3000/api/user/contacts/${Username}`);
         
-        // Update state with fetched data
-        setContacts(response.data);
+        const { privateContacts, groupContacts } = response.data;
+
+        // Format the contacts into the appropriate structure
+        const formattedContacts: Contact[] = [
+          ...privateContacts.map((contact: privateData) => ({
+            type: 'private',
+            data: {
+              username: contact.username,
+              firstname: contact.firstname,
+              lastname: contact.lastname,
+            }
+          })),
+          ...groupContacts.map((group: group) => ({
+            type: 'group',
+            data: {
+              name: group.groupname,
+              participants: group.participants,
+            }
+          })),
+        ];
+
+        // Set the state with the formatted contacts
+        setContacts(formattedContacts);
       } catch (error) {
         console.error('Error fetching contacts:', error);
       } finally {
@@ -42,7 +80,7 @@ const Contact = () => {
     };
 
     fetchContacts(); // Call the function to fetch contacts
-  }, []);
+  }, []); // Run only once on component mount
 
   // Handle screen resizing to determine small screen behavior
   useEffect(() => {
@@ -83,6 +121,45 @@ const Contact = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isDrawerExpanded]);
 
+  // Open the modal
+  const openModal = () => {
+    setIsModalOpen(true);
+  };
+
+  // Close the modal
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
+
+  // Handle input change
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewContactData(prevState => ({ ...prevState, [name]: value }));
+  };
+
+  // Handle form submission (add new contact or group)
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!newContactData.name || !newContactData.username) {
+      alert('Please fill in all required fields.');
+      return;
+    }
+
+    try {
+      // Add logic for adding a new contact or group to the backend here.
+      // Example for private contact:
+      await axios.post('http://localhost:3000/api/user/contacts', newContactData);
+
+      // Close the modal after submission
+      closeModal();
+
+      // Optionally, refresh the contacts list after adding a new contact
+      // fetchContacts(); // Uncomment to refresh the contacts list
+    } catch (error) {
+      console.error('Error adding contact:', error);
+    }
+  };
+
   const defaultPhotoUrl =
     'https://www.w3schools.com/w3images/avatar2.png'; // Default profile photo
 
@@ -101,6 +178,14 @@ const Contact = () => {
             Chat
           </p>
         </div>
+
+        {/* Plus Icon in Header */}
+        <FontAwesomeIcon
+          icon={faPlus}
+          className={`text-white cursor-pointer ml-auto ${isSmallScreen && !isDrawerExpanded ? 'hidden' : 'block'}`}
+          style={{ fontSize: '16px' }}
+          onClick={openModal} // Open the modal
+        />
       </div>
 
       {/* Contacts List */}
@@ -108,13 +193,13 @@ const Contact = () => {
         {loading ? (
           <div className="text-white text-center p-4">Loading contacts...</div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2 p-1">
             {contacts.map((contact, index) => (
               <NavLink
                 key={index}
                 to={contact.type === 'private' ? `/contact/${contact.data.username}` : `/contact/group-${contact.data.name}`}
                 className={({ isActive }) =>
-                  `block p-3 rounded-2xl text-gray-300 ${isActive ? 'bg-blackv1' : ''}` // Apply active styles
+                  `block p-3 rounded-lg text-gray-300 ${isActive ? 'bg-blackv1' : ''}` // Apply active styles
                 }
               >
                 <div className="flex items-center space-x-4">
@@ -137,6 +222,60 @@ const Contact = () => {
           </div>
         )}
       </div>
+
+      {/* Modal for Adding New Contact or Group */}
+      {isModalOpen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-40">
+          <div className="bg-white p-6 rounded-lg shadow-2xl w-[300px]" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-bold text-lg mb-4">Add New Contact or Group</h3>
+            <form onSubmit={handleSubmit}>
+              <div className="mb-4">
+                <input
+                  type="text"
+                  name="name"
+                  placeholder="Group or Contact Name"
+                  value={newContactData.name}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <input
+                  type="text"
+                  name="username"
+                  placeholder="Username (for private contacts)"
+                  value={newContactData.username}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <textarea
+                  name="participants"
+                  placeholder="Participants (for groups, comma separated)"
+                  value={newContactData.participants}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="px-4 py-2 bg-gray-300 rounded-md mr-2"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded-md">
+                  Add
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -23,9 +23,9 @@ const LoginComponent = () => {
       // Check if login is successful
       if (response.status === 200) {
         localStorage.setItem("username", username);
-        navigate('/home'); // Assuming you have a dashboard route
+        navigate('/'); // Assuming you have a dashboard route
       }
-    } catch (err: any) {
+    } catch (err: any) { 
       // Handle errors
       if (err.response && err.response.data && err.response.data.message) {
         setError(err.response.data.message); // Set error message from response

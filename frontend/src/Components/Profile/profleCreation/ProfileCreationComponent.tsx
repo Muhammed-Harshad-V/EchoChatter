@@ -54,7 +54,7 @@ const ProfileCreationPage = () => {
 
       // Check if the response is successful
       if (response.status === 200) {
-        navigate("/home"); // Redirect after successful update
+        navigate("/"); // Redirect after successful update
       }
     } catch (err) {
       console.error("Error updating profile:", err);

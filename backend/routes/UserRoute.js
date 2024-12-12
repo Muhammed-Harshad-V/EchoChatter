@@ -80,56 +80,35 @@ router.put('/user/:username', async (req, res) => {
   }
 });
 
-// API to Get Specific User Info or Group Info based on Array of Usernames/Group Names
-router.post('/user/get-users', async (req, res) => {
-  const { usernames, groupNames } = req.body; // Array of usernames and/or group names from the frontend
-  console.log(usernames, groupNames);
+router.get('/user/contacts/:username', async (req, res) => {
+  const { username } = req.params;
 
   try {
-    let responseData = [];
+    // Find user by username
+    const user = await User.findOne({ username });
 
-    // If usernames are provided, query users
-    if (Array.isArray(usernames) && usernames.length > 0) {
-      const users = await User.find({ username: { $in: usernames } })
-        .select('username firstname lastname'); // Only fetch the required fields
-
-      if (users.length > 0) {
-        responseData = responseData.concat(
-          users.map(user => ({
-            type: 'private',  // Type for user data
-            data: user
-          }))
-        );
-      } else {
-        return res.status(404).json({ message: 'No users found for the given usernames' });
-      }
+    // Check if the user exists
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
 
-    // If groupNames are provided, query groups
-    if (Array.isArray(groupNames) && groupNames.length > 0) {
-      const groups = await GroupChat.find({ name: { $in: groupNames } });
+    // Extract contacts object
+    const { contacts } = user;
 
-      if (groups.length > 0) {
-        responseData = responseData.concat(
-          groups.map(group => ({
-            type: 'group',  // Type for group data
-            data: {
-              name: group.name,
-              participants: group.participants
-            }
-          }))
-        );
-      } else {
-        return res.status(404).json({ message: 'No groups found for the given group names' });
-      }
+    // Check if the contacts object has private and group arrays
+    if (!contacts || !Array.isArray(contacts.private) || !Array.isArray(contacts.group)) {
+      return res.status(400).json({ message: 'no contacts found' });
     }
 
-    // Respond with the data for both users and/or groups
-    res.status(200).json(responseData);
+    // Return the private and group arrays
+    return res.status(200).json({
+      privateContacts: contacts.private,
+      groupContacts: contacts.group,
+    });
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Error fetching user data:", err);
+    return res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 
