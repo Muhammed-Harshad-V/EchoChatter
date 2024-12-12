@@ -1,7 +1,48 @@
 const mongoose = require('mongoose');
 const PrivateChat = require('../models/PrivateChat');
 const GroupChat = require('../models/GroupChat');
+const User = require('../models/User');
 const connections = {}; // Store WebSocket connections by pair of usernames
+
+// Add contact when a new message is received
+async function addContact(sender, receiver, type,) {
+  try {
+    // Find the recipient user by their userId
+    const user = await User.findOne({ username: sender });
+    console.log(user)
+    
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const receiverData = await User.findOne({ username: receiver });
+    
+    if (!receiverData) {
+      throw new Error('receiver not found');
+    }
+
+    // Check the message type and add to the corresponding contacts list
+    if (type === 'private') {
+      // Check if the sender is already a private contact
+      const contactExists = receiverData.contacts.private.some(contact => contact.username === sender);
+      if (!contactExists) {
+        // Add the sender as a private contact
+        receiverData.contacts.private.push({
+          username: sender,
+          firstname: user.firstname,
+          lastname: user.lastname,
+        });
+      }
+    }
+
+    // Save the updated user document
+    await receiverData.save();
+    console.log('Contact added successfully');
+    
+  } catch (error) {
+    console.error('Error adding contact:', error.message);
+  }
+}
 
 // Function to store a private message in the database
 const storePrivateMessage = async (sender, receiver, message) => {
@@ -200,6 +241,8 @@ const handleDisconnection = async (ws) => {
 // Handle incoming messages from clients
 const handleMessage = async (ws, message) => {
   const { type, sender, receiver, content } = message;
+
+    await addContact(sender, receiver, type,)
 
   // Handle private message
   if (type === 'private') {

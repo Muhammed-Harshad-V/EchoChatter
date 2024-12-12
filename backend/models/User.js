@@ -1,11 +1,34 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs'); // Import bcryptjs
+const { type } = require('os');
+
 
 // Define User schema
 const userSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     default: () => new mongoose.Types.ObjectId(),  // Auto-generate user ID
+  },
+  contacts: {
+    private: [{
+      username: {
+        type: String,
+      },
+      firstname: {
+        type: String,
+      },
+      lastname: {
+        type: String,
+      },
+    }],
+    group: [{
+      groupname: {
+        type: String,
+      },
+      participants: [{
+        type: String, // Assuming participants are identified by usernames or user IDs
+      }],
+    }],
   },
   username: {
     type: String,
