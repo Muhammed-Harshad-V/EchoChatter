@@ -6,7 +6,7 @@ const router = express.Router();
 // Register API (Create New User)
 
 router.post('/user/register', async (req, res) => {
-  const { username, firstname, lastname, email, password } = req.body;
+  const { username, email, password } = req.body;
   try {
     // Check if user already exists
     const userExists = await User.findOne({ email });
@@ -15,7 +15,7 @@ router.post('/user/register', async (req, res) => {
     }
 
     // Create new user
-    const newUser = new User({ username, firstname, lastname, email, password });
+    const newUser = new User({ username, email, password });
     await newUser.save();
 
     // Return a success response
@@ -28,12 +28,13 @@ router.post('/user/register', async (req, res) => {
 
 // Login API
 router.post('/user/login', async (req, res) => {
-  const { email, password } = req.body;
+  const { username, password } = req.body;
+  console.log(username)
   try {
     // Check if user exists
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ username: username });
     if (!user) {
-      return res.status(400).json({ message: 'Invalid email or password' });
+      return res.status(400).json({ message: 'Invalid username or password' });
     }
 
     // Check if password matches
@@ -47,6 +48,35 @@ router.post('/user/login', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
+  }
+});
+// Endpoint to find user by username and add firstname/lastname
+router.put('/user/:username', async (req, res) => {
+  const { username } = req.params;
+  const { firstname, lastname } = req.body;
+
+  if (!firstname || !lastname) {
+    return res.status(400).json({ message: 'Firstname and lastname are required' });
+  }
+
+  try {
+    // Find user by username
+    const user = await User.findOne({ username });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update user with firstname and lastname
+    user.firstname = firstname;
+    user.lastname = lastname;
+
+    // Save updated user
+    await user.save();
+
+    return res.status(200).json({ message: 'User updated successfully', user });
+  } catch (err) {
+    return res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 

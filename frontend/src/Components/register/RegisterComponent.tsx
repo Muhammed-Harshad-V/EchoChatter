@@ -2,33 +2,48 @@ import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import axios from "axios";
 
-const LoginComponent = () => {
+const RegisterComponent = () => {
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null); // State for error message
-  const [loading, setLoading] = useState(false); // To handle loading state
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState<string | null>(null); // For handling errors
+  const [loading, setLoading] = useState(false); // For handling loading state
 
-  const navigate = useNavigate(); // Used to navigate after successful login
+  const navigate = useNavigate(); // For navigation after registration
 
-  // Handle form submission
-  const handleLogin = async (e: React.FormEvent) => {
+   // Handle form submission
+   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null); // Clear any previous errors
     setLoading(true); // Start loading
 
+    // Check if passwords match
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      setLoading(false);
+      return;
+    }
+
     try {
-      // Make API call to login endpoint
-      const response = await axios.post('http://localhost:3000/api/user/login', { username: username, password });
-      
-      // Check if login is successful
-      if (response.status === 200) {
+      // Make API call to register the user
+      const response = await axios.post("http://localhost:3000/api/user/register", {
+        username,
+        email,
+        password,
+      });
+
+      if (response.status === 201) {
+        // If registration is successful, store username in localStorage
         localStorage.setItem("username", username);
-        navigate('/home'); // Assuming you have a dashboard route
+
+        // Redirect to profile creation page
+        navigate("/create/Profile"); // Redirect to profile creation page
       }
     } catch (err: any) {
-      // Handle errors
+      // Handle error responses from the server
       if (err.response && err.response.data && err.response.data.message) {
-        setError(err.response.data.message); // Set error message from response
+        setError(err.response.data.message); // Display server error message
       } else {
         setError("Server error. Please try again later.");
       }
@@ -37,14 +52,13 @@ const LoginComponent = () => {
     }
   };
 
-
   return (
     <div className="flex items-center justify-center h-[100vh] bg-black">
       <div className="bg-gray-900 p-8 rounded-lg shadow-lg w-[90%] max-w-md">
         <h1 className="text-2xl sm:text-lg sm-custom:text-lg font-bold text-white text-center mb-6">
-          Login to H-Messenger
+          Create an Account
         </h1>
-        
+
         {/* Display error message if any */}
         {error && (
           <div className="bg-red-500 text-white p-2 rounded mb-4 text-center">
@@ -52,7 +66,7 @@ const LoginComponent = () => {
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="flex flex-col space-y-4">
+        <form onSubmit={handleRegister} className="flex flex-col space-y-4">
           {/* Username Input */}
           <div>
             <label
@@ -67,6 +81,24 @@ const LoginComponent = () => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Enter your username"
+              className="w-full px-4 py-2 bg-gray-800 text-white rounded-lg sm:text-sm text-base focus:outline-none border border-gray-700 sm-custom:text-sm"
+            />
+          </div>
+
+          {/* Email Input */}
+          <div>
+            <label
+              htmlFor="email"
+              className="block text-gray-400 sm:text-sm text-lg mb-2 sm-custom:text-sm"
+            >
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email"
               className="w-full px-4 py-2 bg-gray-800 text-white rounded-lg sm:text-sm text-base focus:outline-none border border-gray-700 sm-custom:text-sm"
             />
           </div>
@@ -89,25 +121,43 @@ const LoginComponent = () => {
             />
           </div>
 
-          {/* Login Button */}
+          {/* Confirm Password Input */}
+          <div>
+            <label
+              htmlFor="confirmPassword"
+              className="block text-gray-400 sm:text-sm text-lg mb-2 sm-custom:text-sm"
+            >
+              Confirm Password
+            </label>
+            <input
+              id="confirmPassword"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm your password"
+              className="w-full px-4 py-2 bg-gray-800 text-white rounded-lg sm:text-sm text-base focus:outline-none border border-gray-700 sm-custom:text-sm"
+            />
+          </div>
+
+          {/* Register Button */}
           <button
             type="submit"
             className="w-full py-2 bg-blue-500 text-white font-semibold rounded-lg sm:text-sm text-base hover:bg-blue-600 transition sm-custom:text-sm"
-            disabled={loading} // Disable button when loading
+            disabled={loading} // Disable the button while loading
           >
-            {loading ? "Logging in..." : "Login"}
+            {loading ? "Registering..." : "Register"}
           </button>
         </form>
 
         {/* Footer */}
         <div className="mt-6 text-center">
           <p className="text-gray-400 sm:text-xs text-sm sm-custom:text-[12px]">
-            Don’t have an account?{" "}
+            Already have an account?{" "}
             <NavLink
-              to="/signup"
+              to="/login"
               className="text-blue-400 hover:underline sm-custom:text-[12px]"
             >
-              Sign up
+              Login
             </NavLink>
           </p>
         </div>
@@ -116,4 +166,4 @@ const LoginComponent = () => {
   );
 };
 
-export default LoginComponent;
+export default RegisterComponent;

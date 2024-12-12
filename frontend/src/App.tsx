@@ -3,7 +3,8 @@ import HomePage from "./pages/home/HomePage";
 import Navbar from "./pages/navbar/Navbar";
 import IndivitualChat from "./Components/home/IndivitualChat";
 import LoginPage from "./pages/loginpage/LoginPage";
-
+import RegisterPage from "./pages/register/RegisterPage";
+import ProfileCreationPage from "./pages/profile/profilecreation/profileCreationPage";
 
 
 
@@ -29,12 +30,20 @@ function App() {
           },
         ]
       },
-        {
-        path: "/login",
-        element: <LoginPage/>
-      },
     ]
-    }
+  },
+    {
+      path: "/login",
+      element: <LoginPage/>
+    },
+      {
+      path: "/signup",
+      element: <RegisterPage/>
+    },
+      {
+      path: "/create/Profile",
+      element: <ProfileCreationPage/>
+    },
     
   ]);
 
