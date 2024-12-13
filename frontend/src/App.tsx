@@ -5,6 +5,7 @@ import IndivitualChat from "./Components/home/IndivitualChat";
 import LoginPage from "./pages/loginpage/LoginPage";
 import RegisterPage from "./pages/register/RegisterPage";
 import ProfileCreationPage from "./pages/profile/profilecreation/profileCreationPage";
+import NewPrivateChat from "./Components/home/newchats/private/NewPrivateChat";
 
 
 
@@ -29,6 +30,10 @@ function App() {
             element: <IndivitualChat/>
           },
         ]
+      },
+      {
+        path: "/add/private",
+        element: <NewPrivateChat/>
       },
     ]
   },
