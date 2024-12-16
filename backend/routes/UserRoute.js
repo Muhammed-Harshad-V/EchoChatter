@@ -155,18 +155,18 @@ router.post('/user/new/add', async (req, res) => {
 
     // 3. Add the new user's details to the logged-in user's private contacts
     const newContact = {
-      username: newUser.username,
-      firstname: newUser.firstname,
-      lastname: newUser.lastname,
+      username: loggedInUser.username,
+      firstname: loggedInUser.firstname,
+      lastname: loggedInUser.lastname,
     };
 
     // Make sure the contact is not already in the contacts list (to avoid duplicates)
-    if (!loggedInUser.contacts.private.some(contact => contact.username === username)) {
-      loggedInUser.contacts.private.push(newContact);
+    if (!newUser.contacts.private.some(contact => contact.username === loggedInUser.username)) {
+      newUser.contacts.private.push(newContact);
     }
 
     // 4. Save the updated logged-in user
-    await loggedInUser.save();
+    await newUser.save();
 
     res.status(200).send({ message: 'User added to contacts successfully' });
   } catch (error) {

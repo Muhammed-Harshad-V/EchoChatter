@@ -14,7 +14,7 @@ const socketUrl = "ws://localhost:3000"; // Replace with your WebSocket server U
 
 const IndivitualChat = () => {
   const { chatId } = useParams<{ chatId: string }>(); // Capture dynamic chatId from URL
-  const self = "dev"; // The current user (change as necessary)
+  const self = localStorage.getItem('username'); // The current user (change as necessary)
 
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -94,19 +94,16 @@ const IndivitualChat = () => {
       <div key={index} style={style} className={`flex items-start mb-4`}>
         <div className={`${isSender ? "ml-auto" : ""}`}>
           <div className={`flex flex-col max-w-xs ${isSender ? "items-end" : "items-start"}`}>
-            {/* Display sender name for group chats */}
-              <div className="chat-header text-sm font-semibold text-white text-left">
-                {message.sender}
-              </div>
 
-            <div
-              className={`rounded-lg p-2 ${
+          <div
+              className={`rounded-lg p-1 flex ${
                 isSender ? "bg-blue-500 text-white" : "bg-gray-600 text-white"
-              }`}
+              } sm:max-w-[300px] sm-custom:max-w-[200px] lg:max-w-[400px] break-all`}
             >
               {message.content}
-            </div>
-            <div className="text-xs text-gray-400 mt-1">{formattedTime}</div> {/* Timestamp */}
+          </div>
+
+              <div className="text-[10px] text-gray-400 mt-1">{formattedTime}</div>
           </div>
         </div>
       </div>
@@ -155,14 +152,14 @@ const IndivitualChat = () => {
 
   return (
     <div className="flex-col w-full h-full">
-      <div className="flex items-center bg-black px-4 py-3 lg:h-[64px] sm-custom:h-[49px]">
+      <div className="flex items-center bg-black px-4 py-3 h-[49px]">
         <img
           src={userData.profilePicture || "https://via.placeholder.com/50"}
           alt="User Profile"
-          className="lg:w-10 lg:h-10 sm-custom:w-8 sm-custom:h-8 rounded-full"
+          className="w-8 h-8 rounded-full"
         />
         <div className="ml-3">
-          <h1 className="sm-custom:text-sm sm:text-sm lg:text-lg font-semibold text-white">
+          <h1 className="text-sm font-semibold text-white">
             {userData.name || chatIdentifier}
           </h1>
         </div>
@@ -172,11 +169,11 @@ const IndivitualChat = () => {
         <div className="flex-1 bg-blackv1 p-6 sm-custom:p-[10px] sm:p-[18px] flex flex-col justify-start items-start">
           <List
             ref={listRef} // Attach the ref to the List component
-            height={window.innerHeight - 250} // Adjust the height according to your layout
+            height={window.innerHeight - 228} // Adjust the height according to your layout
             itemCount={messages.length}
-            itemSize={105} // Adjust item height as per your design
+            itemSize={70} // Adjust item height as per your design
             width="100%"
-            className="overflow-y-auto scrollbar-thin scrollbar-thumb-blackv1 scrollbar-track-transparent"
+            className="overflow-y-auto scrollbar-thin scrollbar-none scrollbar-track-transparent"
           >
             {renderMessage}
           </List>

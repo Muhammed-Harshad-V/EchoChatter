@@ -86,7 +86,7 @@ const NewPrivateChat = () => {
 
       // Navigate to the home page after successful submission
       if (response.status === 200) {
-        navigate('/'); // Navigate to home page
+        navigate(`/contact/${userDetailsUsername}`); // Navigate to home page
       } else {
         setError('Error adding user');
       }

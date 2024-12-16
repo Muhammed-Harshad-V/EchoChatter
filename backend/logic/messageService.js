@@ -10,6 +10,9 @@ async function addContact(sender, receiver, type,) {
     // Find the recipient user by their userId
     const user = await User.findOne({ username: sender });
     console.log(user)
+    console.log(receiver)
+    console.log(type)
+
     
     if (!user) {
       throw new Error('User not found');
@@ -242,7 +245,7 @@ const handleDisconnection = async (ws) => {
 const handleMessage = async (ws, message) => {
   const { type, sender, receiver, content } = message;
 
-    await addContact(sender, receiver, type,)
+  await addContact(sender, receiver, type,)
 
   // Handle private message
   if (type === 'private') {
