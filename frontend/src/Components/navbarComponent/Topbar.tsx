@@ -9,7 +9,7 @@ const TopBar: React.FC = () => {
       <div className="flex items-center justify-between px-8 py-4 bg-blacks1 shadow-md h-[60px]">
         {/* Left: App Name */}
         <div className="flex items-center">
-          <p className="text-white text-xl ml-4 font-semibold">H-Messenger</p>
+          <p className="text-white text-xl ml-4 font-semibold">EchoChatter</p>
         </div>
 
         {/* Right: Profile & Logout */}

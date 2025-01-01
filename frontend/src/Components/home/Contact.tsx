@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { faComments, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import axios from 'axios';
+import { useGlobalState } from '../../context/ContactsProvider';
 
 interface Contact {
   type: 'private' | 'group'; // Type of contact: private (user) or group
@@ -18,56 +19,14 @@ interface Contact {
 const Contact = () => {
   const [isDrawerExpanded, setIsDrawerExpanded] = useState(false); // Controls full drawer open/close
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 768); // Tracks if screen width is <768px
-  const [contacts, setContacts] = useState<Contact[]>([]); // State to store the contact list data
-  const [loading, setLoading] = useState(true); // State to handle loading status
+  const { contacts, loading, fetchContacts } = useGlobalState()
+  // const [contacts, setContacts] = useState<Contact[]>([]); // State to store the contact list data
+  // const [loading, setLoading] = useState(true); // State to handle loading status
   const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
-  const [newContactData, setNewContactData] = useState({ name: '', username: '', participants: '' }); // For form data
   const navigate = useNavigate(); // Used for programmatic navigation
 
   // Fetch contacts from API
   useEffect(() => {
-    const fetchContacts = async () => {
-      const Username = localStorage.getItem('username'); // Get username from localStorage
-
-      if (!Username) {
-        console.error('Username not found in localStorage');
-        return;
-      }
-
-      try {
-        // Make an API request to get the contacts based on the username
-        const response = await axios.get(`http://localhost:3000/api/user/contacts/${Username}`);
-        
-        const { privateContacts, groupContacts } = response.data;
-
-        // Format the contacts into the appropriate structure
-        const formattedContacts: Contact[] = [
-          ...privateContacts.map((contact: any) => ({
-            type: 'private',
-            data: {
-              username: contact.username,
-              firstname: contact.firstname,
-              lastname: contact.lastname,
-            }
-          })),
-          ...groupContacts.map((group: any) => ({
-            type: 'group',
-            data: {
-              name: group.groupname,
-              participants: group.participants,
-            }
-          })),
-        ];
-
-        // Set the state with the formatted contacts
-        setContacts(formattedContacts);
-      } catch (error) {
-        console.error('Error fetching contacts:', error);
-      } finally {
-        setLoading(false); // Set loading to false once the data is fetched
-      }
-    };
-
     fetchContacts(); // Call the function to fetch contacts
   }, []); // Run only once on component mount
 

@@ -64,8 +64,6 @@ wss.on('connection', async (ws, receiver, sender) => {
                 data = data.toString();  // Convert buffer to string
             }
 
-            console.log('This is the raw data:', data);
-            console.log(typeof(data))
 
         try {
              // If the data is a string, parse it into a JSON object

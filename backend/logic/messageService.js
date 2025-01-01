@@ -4,48 +4,70 @@ const GroupChat = require('../models/GroupChat');
 const User = require('../models/User');
 const connections = {}; // Store WebSocket connections by pair of usernames
 
-// Add contact when a new message is received
-async function addContact(sender, receiver, type,) {
+async function addContact(sender, receiver, type, connections) {
+  console.log(  )
   try {
-    // Find the recipient user by their userId
-    const user = await User.findOne({ username: sender });
-    console.log(user)
-    console.log(receiver)
-    console.log(type)
-
-    
-    if (!user) {
-      throw new Error('User not found');
+    // Find the sender user by their username
+    const senderData = await User.findOne({ username: sender });
+    if (!senderData) {
+      return;
     }
 
+    // Find the receiver user by their username
     const receiverData = await User.findOne({ username: receiver });
-    
     if (!receiverData) {
-      throw new Error('receiver not found');
+      return;
     }
 
-    // Check the message type and add to the corresponding contacts list
+    // Add the contact to both sender and receiver
     if (type === 'private') {
-      // Check if the sender is already a private contact
+      // Add the sender as a private contact for the receiver if not already added
       const contactExists = receiverData.contacts.private.some(contact => contact.username === sender);
       if (!contactExists) {
-        // Add the sender as a private contact
         receiverData.contacts.private.push({
           username: sender,
-          firstname: user.firstname,
-          lastname: user.lastname,
+          firstname: senderData.firstname,
+          lastname: senderData.lastname,
+        });
+      }
+
+      // Add the receiver as a private contact for the sender if not already added
+      const senderContactExists = senderData.contacts.private.some(contact => contact.username === receiver);
+      if (!senderContactExists) {
+        senderData.contacts.private.push({
+          username: receiver,
+          firstname: receiverData.firstname,
+          lastname: receiverData.lastname,
         });
       }
     }
 
-    // Save the updated user document
+    // Save the updated sender and receiver user documents
+    await senderData.save();
     await receiverData.save();
-    console.log('Contact added successfully');
-    
+
+    // Prepare notification message
+    const messageToSend = { type: 'contact-update', message: 'New contact added!' };
+
+    // Check if the recipient (receiver) is online and send the notification if so
+    const receiverClient = connections[receiver];
+    if (receiverClient && receiverClient.ws && receiverClient.ws.readyState === WebSocket.OPEN) {
+      receiverClient.ws.send(JSON.stringify(messageToSend)); // Send WebSocket notification to receiver
+    }
+
+    // Check if the sender is online and send the notification if so
+    const senderClient = connections[sender];
+    if (senderClient && senderClient.ws && senderClient.ws.readyState === WebSocket.OPEN) {
+      senderClient.ws.send(JSON.stringify(messageToSend)); // Send WebSocket notification to sender
+    }
+
+
   } catch (error) {
     console.error('Error adding contact:', error.message);
   }
 }
+
+
 
 // Function to store a private message in the database
 const storePrivateMessage = async (sender, receiver, message) => {
@@ -245,7 +267,7 @@ const handleDisconnection = async (ws) => {
 const handleMessage = async (ws, message) => {
   const { type, sender, receiver, content } = message;
 
-  await addContact(sender, receiver, type,)
+  await addContact(sender, receiver, type, connections)
 
   // Handle private message
   if (type === 'private') {

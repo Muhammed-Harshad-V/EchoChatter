@@ -6,6 +6,7 @@ import LoginPage from "./pages/loginpage/LoginPage";
 import RegisterPage from "./pages/register/RegisterPage";
 import ProfileCreationPage from "./pages/profile/profilecreation/profileCreationPage";
 import NewPrivateChat from "./Components/home/newchats/private/NewPrivateChat";
+import { ContactsProvider } from "./context/ContactsProvider.tsx";
 
 
 
@@ -53,7 +54,9 @@ function App() {
   ]);
 
   return (
-    <RouterProvider router={router} />
+    <ContactsProvider>
+      <RouterProvider router={router} />
+    </ContactsProvider>
   );
 }
 

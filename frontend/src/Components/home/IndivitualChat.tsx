@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPaperPlane, faImage } from "@fortawesome/free-solid-svg-icons";
 import { FixedSizeList as List } from "react-window";
+import { useGlobalState } from "../../context/ContactsProvider";
 
 interface Message {
   sender: string;
@@ -15,7 +16,7 @@ const socketUrl = "ws://localhost:3000"; // Replace with your WebSocket server U
 const IndivitualChat = () => {
   const { chatId } = useParams<{ chatId: string }>(); // Capture dynamic chatId from URL
   const self = localStorage.getItem('username'); // The current user (change as necessary)
-
+    const { fetchContacts } = useGlobalState()
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [socket, setSocket] = useState<WebSocket | null>(null); // To store the WebSocket connection
@@ -49,23 +50,43 @@ const IndivitualChat = () => {
     socketConnection.onmessage = (event) => {
       try {
         let data = JSON.parse(event.data);
+    
+        // If the incoming data is an array, make sure it’s processed as an array
         data = Array.isArray(data) ? data : [data];
-        console.log(data)
-        if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0].messages)) {
-          const dataMessages = data[0].messages;
-          console.log(dataMessages)
-          const incomingMessages: Message[] = dataMessages.map((message: any) => ({
-            sender: message.sender,
-            content: message.content,
-            timestamp: message.timestamp,
-          }));
-          setMessages((prevMessages) => [...prevMessages, ...incomingMessages]);
-        }
+    
+        console.log(data);
+    
+        // Check if the incoming data contains messages and/or notifications
+        data.forEach((item) => {
+          if (item.type === 'contact-update') {
+            // Handle 'contact-update' notification
+            console.log('Notification:', item.message);
+            fetchContacts();
+          }
+    
+          // Optionally handle other types of messages or notifications
+          if (item.type === 'new-message') {
+            // Handle a new message notification (you can add more types as needed)
+            console.log('New message notification:', item.message);
+
+          }
+    
+          // Handle other types of incoming data, like chat messages
+          if (Array.isArray(item.messages)) {
+            const incomingMessages = item.messages.map((message) => ({
+              sender: message.sender,
+              content: message.content,
+              timestamp: message.timestamp,
+            }));
+            setMessages((prevMessages) => [...prevMessages, ...incomingMessages]);
+          }
+        });
       } catch (error) {
         console.error("Error processing incoming message:", error);
       }
     };
-
+    
+    
     socketConnection.onerror = (error) => {
       console.error("WebSocket Error: ", error);
     };
@@ -122,22 +143,29 @@ const IndivitualChat = () => {
   };
 
   const handleSend = () => {
+    // Ensure 'self' is a valid string
+    const sender = self || "UnknownUser";  // Default to a placeholder name if 'self' is null
+    
     if (message.trim() && socket) {
       const messageData = {
         type: isGroupChat ? "group" : "private", // Dynamic type based on chat type
-        sender: self,
+        sender: sender,  // Use the non-null sender
         receiver: chatIdentifier,
         content: message,
       };
-      console.log(messageData)
+  
+      console.log(messageData);
       socket.send(JSON.stringify(messageData)); // Send message via WebSocket
+  
       setMessages((prevMessages) => [
         ...prevMessages,
-        { sender: self, content: message, timestamp: Date.now() },
+        { sender: sender, content: message, timestamp: Date.now() },
       ]);
+  
       setMessage(""); // Clear input field
     }
   };
+  
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
