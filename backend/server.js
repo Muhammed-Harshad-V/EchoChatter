@@ -3,7 +3,7 @@ const WebSocket = require('ws');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const UserRoutes = require('./routes/UserRoute');  // Importing the User Routes
-const { handleMessage, handleDisconnection, handleConnection } = require('./logic/messageService');
+const { handleMessage, handleDisconnection, handleConnection, alreadyConnected } = require('./logic/messageService');
 
 
 // MongoDB Connection
@@ -32,8 +32,8 @@ server.on('upgrade', (request, socket, head) => {
     const pathSegments = request.url.split('/');  // Split the URL by '/'
 
     // Extract receiver and sender from the URL
-    const receiver = pathSegments[1];   // This is the sender (self)Receiver is the 4th segment in the URL
-    const sender = pathSegments[2];  // This is the receiver (username)
+    const receiver = pathSegments[2];   // This is the sender (self)Receiver is the 4th segment in the URL
+    const sender = pathSegments[1];  // This is the receiver (username)
     console.log(`reciever ${receiver}`)
     console.log(`senter ${sender}`)
 
@@ -54,7 +54,6 @@ server.on('upgrade', (request, socket, head) => {
 wss.on('connection', async (ws, receiver, sender) => {
     console.log(`${sender} connected via WebSocket`);
 
-    // Handle the new WebSocket connection
     await handleConnection(ws, sender, receiver);
 
     // Listen for incoming messages

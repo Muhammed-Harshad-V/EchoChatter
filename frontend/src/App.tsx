@@ -7,6 +7,7 @@ import RegisterPage from "./pages/register/RegisterPage";
 import ProfileCreationPage from "./pages/profile/profilecreation/profileCreationPage";
 import NewPrivateChat from "./Components/home/newchats/private/NewPrivateChat";
 import { ContactsProvider } from "./context/ContactsProvider.tsx";
+import NewGroupChat from "./Components/home/newchats/groupchat/newGroupChat.tsx";
 
 
 
@@ -35,6 +36,10 @@ function App() {
       {
         path: "/add/private",
         element: <NewPrivateChat/>
+      },
+      {
+        path: "/create/group",
+        element: <NewGroupChat/>
       },
     ]
   },

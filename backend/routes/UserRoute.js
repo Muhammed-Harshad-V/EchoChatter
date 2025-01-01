@@ -2,6 +2,7 @@ const express = require("express");
 const User = require("../models/User");
 const GroupChat = require("../models/GroupChat");
 const router = express.Router();
+const { getConnection } = require('../logic/messageService');
 
 // Register API (Create New User)
 
@@ -136,7 +137,7 @@ router.get('/user/:username', async (req, res) => {
 });
 
 router.post('/user/new/add', async (req, res) => {
-  const { username, firstname, lastname, loggedInUsername } = req.body;
+  const { username, loggedInUsername } = req.body;
 
   try {
     // 1. Find the logged-in user by their username
@@ -174,5 +175,70 @@ router.post('/user/new/add', async (req, res) => {
     res.status(500).send({ message: 'Error adding user to contacts' });
   }
 });
+
+// POST API to create a new group
+router.post('/user/new/group', async (req, res) => {
+  try {
+    // Destructure name and participants from the request body
+    const { name, participants } = req.body;
+
+    // Validate the required fields
+    if (!name || !participants || participants.length < 2) { // At least two participants are needed (including the creator)
+      return res.status(400).json({ message: "Group name and at least two participants are required." });
+    }
+
+    // Create a new group chat instance with the provided data
+    const newGroup = new GroupChat({
+      name,
+      participants,
+      messages: [],  // Initialize with an empty messages array
+    });
+
+    // Save the new group to the database
+    await newGroup.save();
+
+    // Prepare the message to send to each participant
+    const messageToSend = { type: 'group-update', message: 'New group created!' };
+
+    // Loop through each participant and update their contacts
+    for (const participant of participants) {
+      console.log('Updating user:', participant);
+
+      // Fetch the participant's user document from the database
+      const user = await User.findOne({ username: participant });
+
+      if (user) {
+        // Add the group to the participant's contacts.group array
+        user.contacts.group.push({
+          groupname: newGroup.name,
+          participants: participants,  // Store all participants in the group
+        });
+
+        // Save the updated user data
+        await user.save();
+
+        // Send a WebSocket notification to the participant
+        // Ensure you have a proper connections map where WebSocket clients are stored
+        const participantClient = getConnection(participant);  // Assuming 'connections' is an object that holds WebSocket connections by username
+            console.log(participantClient);
+        if (participantClient && participantClient.ws && participantClient.ws.readyState === WebSocket.OPEN) {
+          participantClient.ws.send(JSON.stringify(messageToSend));  // Send the notification to the participant
+        }
+      }
+    }
+
+    // Respond with the created group
+    return res.status(201).json({
+      message: 'Group created successfully!',
+      group: newGroup,
+    });
+  } catch (error) {
+    console.error('Error creating group:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+
+
 
 module.exports = router;

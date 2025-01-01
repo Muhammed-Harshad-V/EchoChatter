@@ -32,7 +32,8 @@ const IndivitualChat = () => {
     setMessages([]); // Clear previous messages when changing chats
 
     // Dynamically set the WebSocket connection URL
-    const socketConnection = new WebSocket(`${socketUrl}/${chatIdentifier}/${self}`);
+    const socketConnection = new WebSocket(`${socketUrl}/${self}/${chatIdentifier}`);
+    console.log(socketConnection)
 
     setSocket(socketConnection);
 
@@ -59,16 +60,13 @@ const IndivitualChat = () => {
         // Check if the incoming data contains messages and/or notifications
         data.forEach((item) => {
           if (item.type === 'contact-update') {
-            // Handle 'contact-update' notification
             console.log('Notification:', item.message);
             fetchContacts();
           }
-    
-          // Optionally handle other types of messages or notifications
-          if (item.type === 'new-message') {
-            // Handle a new message notification (you can add more types as needed)
-            console.log('New message notification:', item.message);
 
+          if (item.type === 'group-update') {
+            console.log('New message notification:', item.message);
+            fetchContacts();
           }
     
           // Handle other types of incoming data, like chat messages
