@@ -5,7 +5,7 @@ const User = require('../models/User');
 const connections = {}; // Store WebSocket connections by pair of usernames
 
 async function addContact(sender, receiver, type, connections) {
-  console.log(  )
+  console.log(sender, receiver, type, connections);
   try {
     // Find the sender user by their username
     const senderData = await User.findOne({ username: sender });
@@ -19,6 +19,9 @@ async function addContact(sender, receiver, type, connections) {
       return;
     }
 
+    // Flag to determine if a new contact was added
+    let isNewContactAdded = false;
+
     // Add the contact to both sender and receiver
     if (type === 'private') {
       // Add the sender as a private contact for the receiver if not already added
@@ -29,6 +32,7 @@ async function addContact(sender, receiver, type, connections) {
           firstname: senderData.firstname,
           lastname: senderData.lastname,
         });
+        isNewContactAdded = true; // Mark that a new contact was added
       }
 
       // Add the receiver as a private contact for the sender if not already added
@@ -39,7 +43,13 @@ async function addContact(sender, receiver, type, connections) {
           firstname: receiverData.firstname,
           lastname: receiverData.lastname,
         });
+        isNewContactAdded = true; // Mark that a new contact was added
       }
+    }
+
+    // If no new contact was added, skip saving and sending notifications
+    if (!isNewContactAdded) {
+      return; // No contact was added, so no need to continue
     }
 
     // Save the updated sender and receiver user documents
@@ -61,11 +71,11 @@ async function addContact(sender, receiver, type, connections) {
       senderClient.ws.send(JSON.stringify(messageToSend)); // Send WebSocket notification to sender
     }
 
-
   } catch (error) {
     console.error('Error adding contact:', error.message);
   }
 }
+
 
 
 
