@@ -1,31 +1,39 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 import { Outlet } from 'react-router-dom';
 
 const TopBar: React.FC = () => {
-  // useEffect(() => {
-  //   // Assuming we have the username stored in localStorage or from a global state
-  //   const loggedInUsername = localStorage.getItem('username'); // Or fetch from context
+  const wsRef = useRef<WebSocket | null>(null);
 
-  //   if (loggedInUsername) {
+  useEffect(() => {
+    const loggedInUsername = localStorage.getItem('username'); // Or from context
 
-  //     // Create a WebSocket connection
-  //     const ws = new WebSocket(`ws://localhost:3000/${loggedInUsername}`);
+    if (loggedInUsername) {
+      // If WebSocket is already connected, avoid creating a new one
+      if (!wsRef.current) {
+        wsRef.current = new WebSocket(`ws://localhost:3000/${loggedInUsername}`);
 
-  //     ws.onopen = () => {
-  //       console.log(`Connected to WebSocket server with username: ${loggedInUsername}`);
-  //     };
+        // WebSocket event handlers
+        wsRef.current.onopen = () => {
+          console.log(`Connected to WebSocket server with username: ${loggedInUsername}`);
+        };
 
-  //     ws.onclose = () => {
-  //       console.log(`Disconnected from WebSocket server.`);
-  //     };
+        wsRef.current.onmessage = (event) => {
+          console.log("Received message:", event.data);
+        };
 
-  //     ws.onerror = (error) => {
-  //       console.error('WebSocket error:', error);
-  //     };
-  //   }
-  // }, []); 
+        wsRef.current.onclose = () => {
+          console.log("WebSocket connection closed");
+        };
+
+        wsRef.current.onerror = (error) => {
+          console.error("WebSocket error:", error);
+        };
+      }
+    }
+
+  }, []);
 
 
   return (

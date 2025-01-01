@@ -3,7 +3,8 @@ const WebSocket = require('ws');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const UserRoutes = require('./routes/UserRoute');  // Importing the User Routes
-const { handleMessage, handleDisconnection, handleConnection, alreadyConnected } = require('./logic/messageService');
+const { handleMessage, handleDisconnection, handleConnection,} = require('./logic/messageService');
+
 
 
 // MongoDB Connection
@@ -37,12 +38,6 @@ server.on('upgrade', (request, socket, head) => {
     console.log(`reciever ${receiver}`)
     console.log(`senter ${sender}`)
 
-    // If no username, reject the connection
-    if (!receiver) {
-        socket.write('HTTP/1.1 400 Bad Request\r\n\r\n');
-        socket.destroy();
-        return;
-    }
 
     // Upgrade the connection to WebSocket and pass username along
     wss.handleUpgrade(request, socket, head, (ws) => {
@@ -52,7 +47,6 @@ server.on('upgrade', (request, socket, head) => {
 
 // WebSocket Connection Handling
 wss.on('connection', async (ws, receiver, sender) => {
-    console.log(`${sender} connected via WebSocket`);
 
     await handleConnection(ws, sender, receiver);
 
@@ -85,13 +79,20 @@ wss.on('connection', async (ws, receiver, sender) => {
         } catch (error) {
             console.error('Error processing message:', error);
             ws.send(JSON.stringify({ error: 'Invalid message format or missing data!' }));
+            handleDisconnection(ws);
         }
     });
 
     // Handle disconnection
-    ws.on('close', () => {
+    ws.on('close', (event) => {
         console.log(`${sender} disconnected`);
+console.log(event)
         handleDisconnection(ws);  // Clean up on disconnect
+    });
+
+     // Handle WebSocket error
+     ws.on('error', (error) => {
+        console.error('WebSocket error:', error);
     });
 });
 

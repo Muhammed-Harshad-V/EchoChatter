@@ -298,14 +298,17 @@ const sendAllGroupMessages = async (ws, senderUsername, groupName) => {
 
 // Handle WebSocket disconnection (remove user)
 const handleDisconnection = async (ws) => {
-  // Remove the connection when the user disconnects
-  for (let key in connections) {
-    if (connections[key].ws === ws) {
-      delete connections[key]; // Remove from in-memory store
+  // Iterate over all connections to find the user
+  for (let username in connections) {
+    if (connections[username].ws === ws) {
+      console.log(`${username} has disconnected.`);
+      // Remove the user from the connections object
+      delete connections[username];
       break;
     }
   }
 };
+
 
 // Handle incoming messages from clients
 const handleMessage = async (ws, message) => {
