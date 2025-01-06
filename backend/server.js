@@ -68,7 +68,6 @@ wss.on('connection', async (ws, receiver, sender) => {
             parsedMessage = data;
         }
 
-        console.log('Parsed message:', parsedMessage);
             const { type, sender, receiver, name, content } = parsedMessage;  // Expecting { type, sender, receiver, group, content }
 
             if (type === 'private') {
@@ -85,14 +84,7 @@ wss.on('connection', async (ws, receiver, sender) => {
 
     // Handle disconnection
     ws.on('close', (event) => {
-        console.log(`${sender} disconnected`);
-console.log(event)
         handleDisconnection(ws);  // Clean up on disconnect
-    });
-
-     // Handle WebSocket error
-     ws.on('error', (error) => {
-        console.error('WebSocket error:', error);
     });
 });
 

@@ -3,43 +3,9 @@ const PrivateChat = require('../models/PrivateChat');
 const GroupChat = require('../models/GroupChat');
 const User = require('../models/User');
 const connections = {}; // Store WebSocket connections by pair of usernames
-       console.log(connections)
-// Function to get a connection by username
-function getConnection(username) {
-  return connections[username];
-}
 
-async function handleConnection(ws, senderUsername, receiverUsername) {
-  // Check if the sender is already connected
-  if (connections[senderUsername]) {
-    console.log(`${senderUsername} is already connected. Closing the new connection.`);
-
-    // Close the existing WebSocket connection before adding the new one
-    const existingWs = connections[senderUsername].ws;
-    if (existingWs.readyState === WebSocket.OPEN) {
-      existingWs.close(); // Close the old connection
-      console.log(`Closed existing connection for ${senderUsername}`);
-    }
-
-    // Now remove the old connection
-    delete connections[senderUsername];
-  }
-
-  // Add the new connection for the sender
-  connections[senderUsername] = { ws };
-
-  console.log(`${senderUsername} connected via WebSocket`);
-    console.log(connections)
-  // Send all messages between the sender and receiver (if necessary)
-  try {
-    await sendAllMessages(ws, senderUsername, receiverUsername);
-    await sendAllGroupMessages(ws, senderUsername, receiverUsername);
-  } catch (error) {
-    console.error("Error while sending messages:", error);
-  }}
 
 async function addContact(sender, receiver, type, connections) {
-  console.log(sender, receiver, type, connections);
   try {
     // Find the sender user by their username
     const senderData = await User.findOne({ username: sender });
@@ -107,6 +73,42 @@ async function addContact(sender, receiver, type, connections) {
 
   } catch (error) {
     console.error('Error adding contact:', error.message);
+  }
+}
+
+
+async function sendNewGroupNotification(sender, groupName, messageContent, connections) {
+  console.log(sender, groupName, messageContent);
+
+  try {
+    // Fetch the group chat by its name
+    const group = await GroupChat.findOne({ name: groupName });
+    if (!group) {
+      console.log('Group not found');
+      return;
+    }
+
+    // Check if this is the first message in the group chat
+    const isFirstMessage = group.messages.length === 0;
+
+    // If this is the first message, send the "New Group Chat" message to all participants
+    if (isFirstMessage) {
+      const newGroupMessageToSend = { 
+        type: 'new-group-chat', 
+        message: 'New group chat created!' 
+      };
+
+      // Send the "New Group Chat" message to all group members
+      for (let participant of group.participants) {
+        const participantClient = connections[participant];
+        if (participantClient && participantClient.ws && participantClient.ws.readyState === WebSocket.OPEN) {
+          participantClient.ws.send(JSON.stringify(newGroupMessageToSend));
+        }
+      }
+    }
+
+  } catch (error) {
+    console.error('Error sending group message:', error.message);
   }
 }
 
@@ -246,18 +248,19 @@ const sendGroupMessageToParticipants = async (sender, groupName, content) => {
 
     // Send the message to all participants in the group who are online
     groupChat.participants.forEach((participant) => {
-      const client = connections[participant]; // Assuming `connections` holds online users
-      if (client && client.ws) {
-        client.ws.send(JSON.stringify(messageToSend));
-        console.log(`Message sent to ${participant} in group ${groupName}`);
-      } else {
-        console.log(`${participant} is offline. Message not delivered.`);
+      // Skip sending to the sender
+      if (participant !== sender) {
+        const client = connections[participant]; // Assuming `connections` holds online users
+        if (client && client.ws) {
+          client.ws.send(JSON.stringify(messageToSend));
+        }
       }
     });
   } catch (error) {
     console.error(`Error sending group message to participants:`, error);
   }
 };
+
 
 const sendAllGroupMessages = async (ws, senderUsername, groupName) => {
   try {
@@ -278,23 +281,21 @@ const sendAllGroupMessages = async (ws, senderUsername, groupName) => {
 
     // Send the group messages to the client
     ws.send(JSON.stringify(formattedMessages));
-    console.log(`Sent all messages for group: ${groupName}`);
   } catch (error) {
-    console.error("Error fetching group messages:", error);
     ws.send(JSON.stringify({ error: "Failed to fetch group messages" }));
   }
 };
 
 
 // Handle WebSocket connection
-// const handleConnection = async (ws, senderUsername, receiverUsername) => {
-//   // Store the connection in the 'connections' object
-//   connections[senderUsername] = { ws };
+const handleConnection = async (ws, senderUsername, receiverUsername) => {
+  // Store the connection in the 'connections' object
+  connections[senderUsername] = { ws };
 
-//   // Send all existing messages between the two users
-//   await sendAllMessages(ws, senderUsername, receiverUsername);
-//   await sendAllGroupMessages(ws, senderUsername, receiverUsername);
-// };
+  // Send all existing messages between the two users
+  await sendAllMessages(ws, senderUsername, receiverUsername);
+  await sendAllGroupMessages(ws, senderUsername, receiverUsername);
+};
 
 // Handle WebSocket disconnection (remove user)
 const handleDisconnection = async (ws) => {
@@ -314,18 +315,18 @@ const handleDisconnection = async (ws) => {
 const handleMessage = async (ws, message) => {
   const { type, sender, receiver, content } = message;
 
-  await addContact(sender, receiver, type, connections)
 
   // Handle private message
   if (type === 'private') {
+    await addContact(sender, receiver, type, connections)
     await sendMessageToUser(sender, receiver, content);
   }
 
   // Handle group messages
   if (type === 'group') {
-    // Store the group message
-    await storeGroupMessage(sender, receiver, content);
 
+    await sendNewGroupNotification(sender, receiver, content, connections)
+    await storeGroupMessage(sender, receiver, content);
     // Send the message to all participants of the group
     await sendGroupMessageToParticipants(sender, receiver, content);
   }
@@ -335,5 +336,4 @@ module.exports = {
   handleConnection,
   handleDisconnection,
   handleMessage,
-  getConnection,
 };

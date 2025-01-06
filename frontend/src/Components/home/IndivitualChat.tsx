@@ -64,7 +64,7 @@ const IndivitualChat = () => {
             fetchContacts();
           }
 
-          if (item.type === 'group-update') {
+          if (item.type === 'new-group-chat') {
             console.log('New message notification:', item.message);
             fetchContacts();
           }

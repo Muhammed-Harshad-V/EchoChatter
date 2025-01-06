@@ -1,9 +1,45 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 import { Outlet } from 'react-router-dom';
 
 const TopBar: React.FC = () => {
+  const wsRef = useRef<WebSocket | null>(null);
+  useEffect(() => {
+    const loggedInUsername = localStorage.getItem('username');  // Assuming you have the username
+    if (loggedInUsername) {
+      // Establish WebSocket connection
+      wsRef.current = new WebSocket(`ws://localhost:3000/${loggedInUsername}`);
+      wsRef.current.onopen = () => {
+        console.log(`Connected to WebSocket server as ${loggedInUsername}`);
+      };
+      wsRef.current.onmessage = (event) => {
+        console.log("Received message:", event.data);
+      };
+      wsRef.current.onclose = () => {
+        console.log("WebSocket connection closed");
+      };
+      wsRef.current.onerror = (error) => {
+        console.error("WebSocket error:", error);
+      };
+      // Send a message every 10 seconds to keep the connection alive
+      const intervalId = setInterval(() => {
+        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+          const heartbeatMessage = { type: "ping", message: "keep alive" };
+          wsRef.current.send(JSON.stringify(heartbeatMessage)); // Send heartbeat message
+          console.log("Sent heartbeat to server");
+        }
+      }, 10000); // 10 seconds
+      // Clean up when the component is unmounted
+      return () => {
+        clearInterval(intervalId);  // Clear the interval when the component is unmounted
+        if (wsRef.current) {
+          wsRef.current.close();  // Close WebSocket connection when the component is unmounted
+        }
+      };
+    }
+  }, []); 
+
   // Logout function
   const handleLogout = () => {
     // Remove the username or any other user-related data from localStorage

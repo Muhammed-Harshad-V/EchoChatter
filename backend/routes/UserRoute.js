@@ -2,7 +2,6 @@ const express = require("express");
 const User = require("../models/User");
 const GroupChat = require("../models/GroupChat");
 const router = express.Router();
-const { getConnection } = require('../logic/messageService');
 
 // Register API (Create New User)
 
@@ -197,10 +196,6 @@ router.post('/user/new/group', async (req, res) => {
     // Save the new group to the database
     await newGroup.save();
 
-    // Prepare the message to send to each participant
-    const messageToSend = { type: 'group-update', message: 'New group created!' };
-
-    // Loop through each participant and update their contacts
     for (const participant of participants) {
       console.log('Updating user:', participant);
 
@@ -216,14 +211,6 @@ router.post('/user/new/group', async (req, res) => {
 
         // Save the updated user data
         await user.save();
-
-        // Send a WebSocket notification to the participant
-        // Ensure you have a proper connections map where WebSocket clients are stored
-        const participantClient = getConnection(participant);  // Assuming 'connections' is an object that holds WebSocket connections by username
-            console.log(participantClient);
-        if (participantClient && participantClient.ws && participantClient.ws.readyState === WebSocket.OPEN) {
-          participantClient.ws.send(JSON.stringify(messageToSend));  // Send the notification to the participant
-        }
       }
     }
 
