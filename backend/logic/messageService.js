@@ -76,6 +76,31 @@ async function addContact(sender, receiver, type, connections) {
   }
 }
 
+async function handleConnection(ws, senderUsername, receiverUsername) {
+  // Check if the sender is already connected
+  if (connections[senderUsername]) {
+    console.log(`${senderUsername} is already connected. Closing the new connection.`);
+    // Close the existing WebSocket connection before adding the new one
+    const existingWs = connections[senderUsername].ws;
+    if (existingWs.readyState === WebSocket.OPEN) {
+      existingWs.close(); // Close the old connection
+      console.log(`Closed existing connection for ${senderUsername}`);
+    }
+    // Now remove the old connection
+    delete connections[senderUsername];
+  }
+  // Add the new connection for the sender
+  connections[senderUsername] = { ws };
+  console.log(`${senderUsername} connected via WebSocket`);
+    console.log(connections)
+  // Send all messages between the sender and receiver (if necessary)
+  try {
+    await sendAllMessages(ws, senderUsername, receiverUsername);
+    await sendAllGroupMessages(ws, senderUsername, receiverUsername);
+  } catch (error) {
+    console.error("Error while sending messages:", error);
+  }}
+
 
 async function sendNewGroupNotification(sender, groupName, messageContent, connections) {
   console.log(sender, groupName, messageContent);
@@ -288,14 +313,14 @@ const sendAllGroupMessages = async (ws, senderUsername, groupName) => {
 
 
 // Handle WebSocket connection
-const handleConnection = async (ws, senderUsername, receiverUsername) => {
-  // Store the connection in the 'connections' object
-  connections[senderUsername] = { ws };
+// const handleConnection = async (ws, senderUsername, receiverUsername) => {
+//   // Store the connection in the 'connections' object
+//   connections[senderUsername] = { ws };
 
-  // Send all existing messages between the two users
-  await sendAllMessages(ws, senderUsername, receiverUsername);
-  await sendAllGroupMessages(ws, senderUsername, receiverUsername);
-};
+//   // Send all existing messages between the two users
+//   await sendAllMessages(ws, senderUsername, receiverUsername);
+//   await sendAllGroupMessages(ws, senderUsername, receiverUsername);
+// };
 
 // Handle WebSocket disconnection (remove user)
 const handleDisconnection = async (ws) => {

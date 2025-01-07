@@ -2,9 +2,11 @@ import React, { useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 import { Outlet } from 'react-router-dom';
+import { useGlobalState } from '../../context/ContactsProvider';
 
 const TopBar: React.FC = () => {
   const wsRef = useRef<WebSocket | null>(null);
+    const { fetchContacts } = useGlobalState()
   useEffect(() => {
     const loggedInUsername = localStorage.getItem('username');  // Assuming you have the username
     if (loggedInUsername) {
@@ -14,8 +16,27 @@ const TopBar: React.FC = () => {
         console.log(`Connected to WebSocket server as ${loggedInUsername}`);
       };
       wsRef.current.onmessage = (event) => {
-        console.log("Received message:", event.data);
-      };
+          let data = JSON.parse(event.data);
+      
+          // If the incoming data is an array, make sure it’s processed as an array
+          data = Array.isArray(data) ? data : [data];
+      
+          console.log(data);
+      
+          // Check if the incoming data contains messages and/or notifications
+          data.forEach((item) => {
+            if (item.type === 'contact-update') {
+              console.log('Notification:', item.message);
+              fetchContacts();
+            }
+  
+            if (item.type === 'new-group-chat') {
+              console.log('New message notification:', item.message);
+              fetchContacts();
+            }
+          });
+        };
+
       wsRef.current.onclose = () => {
         console.log("WebSocket connection closed");
       };
