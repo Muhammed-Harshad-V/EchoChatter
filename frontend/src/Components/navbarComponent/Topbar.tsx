@@ -95,22 +95,19 @@ const TopBar: React.FC = () => {
   };
 
   return (
-    <div className='w-full h-[100svh] flex flex-col bg-blacks1 fixed z-100 top-0 left-0'>
-      <div className="flex items-center justify-between px-8 py-4 bg-blacks1 shadow-md h-[60px]">
-        {/* Left: App Name */}
+    <div className="w-full h-screen flex flex-col bg-blacks1 fixed z-50 top-0 left-0">
+      {/* TopBar - Fixed */}
+      <div className="flex items-center justify-between px-8 py-4 bg-blacks1 shadow-md h-[60px] fixed w-full top-0 z-50">
         <div className="flex items-center">
           <p className="text-white text-xl ml-4 font-semibold">EchoChatter</p>
         </div>
-
-        {/* Right: Profile & Logout */}
+        
         <div className="flex items-center space-x-8">
-          {/* Settings */}
           <button className="flex items-center text-gray-400 hover:text-white">
             <FontAwesomeIcon icon={faUser} size="lg" />
             <span className="ml-2 hidden sm:block">Profile</span>
           </button>
 
-          {/* Logout */}
           <button 
             className="flex items-center text-gray-400 hover:text-white"
             onClick={handleLogout} // Bind the logout function to the button
@@ -120,7 +117,9 @@ const TopBar: React.FC = () => {
           </button>
         </div>
       </div>
-      <div className='xl:w-[90%] w-full m-auto'>
+
+      {/* Scrollable Content */}
+      <div className="overflow-y-auto h-full mt-[60px] xl:w-[90%] w-full m-auto">
         <Outlet />
       </div>
     </div>
