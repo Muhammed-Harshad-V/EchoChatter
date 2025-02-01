@@ -45,7 +45,7 @@ const LoginComponent = () => {
   };
 
   return (
-    <div className="flex items-center justify-center h-[100vh] bg-black">
+    <div className="flex items-center justify-center h-[100svh] bg-black">
       <div className="bg-gray-900 p-8 rounded-lg shadow-lg w-[90%] max-w-md">
         <h1 className="text-2xl sm:text-lg sm-custom:text-lg font-bold text-white text-center mb-6">
           Login to H-Messenger

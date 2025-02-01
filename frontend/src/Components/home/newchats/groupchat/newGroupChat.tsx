@@ -98,7 +98,7 @@ const NewGroupChat = () => {
   };
 
   return (
-    <div className="w-full h-[calc(100vh-60px)] p-4">
+    <div className="w-full h-[calc(100svh-60px)] p-4">
       <div className="flex flex-col items-center p-4 bg-black text-white w-full max-w-sm mx-auto rounded-lg mt-[80px]">
         <h2 className="text-2xl font-bold mb-4">Create New Group Chat</h2>
 
