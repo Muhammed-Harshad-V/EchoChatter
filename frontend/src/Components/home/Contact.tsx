@@ -111,7 +111,7 @@ const Contact = () => {
   return (
     <div
       id="drawer"
-      className={`bg-black flex-col flex ${isSmallScreen ? (isDrawerExpanded ? 'w-[200px] absolute z-50 h-[calc(100svh-60px)]' : 'w-[70px]') : 'w-[320px]'}`}
+      className={`bg-black flex-col flex ${isSmallScreen ? (isDrawerExpanded ? 'w-[200px] absolute z-40 h-[calc(100vh-60px)]' : 'w-[70px]') : 'w-[320px]'}`}
     >
       {/* Header */}
       <div className="flex items-center justify-between lg:p-4 sm:p-2 sm-custom:p-2 z-10">
