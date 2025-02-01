@@ -25,7 +25,7 @@ const Contact = () => {
   // Fetch contacts from API
   useEffect(() => {
     fetchContacts(); // Call the function to fetch contacts
-  }, [fetchContacts]); // Run only once on component mount
+  }, []); // Run only once on component mount
 
   // Handle screen resizing to determine small screen behavior
   useEffect(() => {
