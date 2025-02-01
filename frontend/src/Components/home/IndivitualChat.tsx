@@ -161,7 +161,7 @@ const IndivitualChat = () => {
         <div className="flex-1 bg-blackv1 p-6 sm-custom:p-[10px] sm:p-[18px] flex flex-col justify-start items-start">
           <List
             ref={listRef}
-            height={window.innerHeight - 190}
+            height={window.innerHeight - 90}
             itemCount={messages.length}
             itemSize={80}
             width="100%"
@@ -181,9 +181,6 @@ const IndivitualChat = () => {
               placeholder="Type your message..."
               className="w-full p-3 pl-4 pr-16 rounded-full bg-gray-800 text-white sm-custom:text-[12px] sm:text-[16px] focus:outline-none border border-blackv1"
             />
-            <button className="absolute top-1/2 sm:right-[80px] sm-custom:right-[60px] transform -translate-y-1/2 text-gray-400 hover:text-white">
-              <FontAwesomeIcon icon={faImage} size="lg" />
-            </button>
 
             <button
               onClick={handleSend}
