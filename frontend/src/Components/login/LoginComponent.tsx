@@ -24,7 +24,7 @@ const LoginComponent = () => {
 
     try {
       // Make API call to login endpoint
-      const response = await axios.post(`${api}/api/user/login`, { username: username, password });
+      const response = await axios.post(`${api}/user/login`, { username: username, password });
       
       // Check if login is successful
       if (response.status === 200) {
