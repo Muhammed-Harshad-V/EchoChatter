@@ -15,7 +15,13 @@ mongoose.connect(DB_URI)
 
 // Initialize Express and WebSocket Server
 const app = express();
-app.use(cors());
+
+app.use(cors({
+    origin: 'https://echochatter.onrender.com',  // Allow only this frontend URL
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],  // Allow specific HTTP methods
+    allowedHeaders: ['Content-Type', 'Authorization'], // Allow these headers
+}));
+
 app.use(express.json());
 const PORT = 3000;
 const wss = new WebSocket.Server({ noServer: true });
