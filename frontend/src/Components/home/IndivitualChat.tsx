@@ -197,11 +197,11 @@ const IndivitualChat = () => {
         </div>
       </div>
 
-      <div className="flex flex-col lg:h-[calc(100vh-128px)] sm-custom:h-[calc(100vh-110px)] w-full bg-blackv1">
+      <div className="flex flex-col lg:h-[calc(100svh-128px)] sm-custom:h-[calc(100vh-110px)] w-full bg-blackv1">
         <div className="flex-1 bg-blackv1 p-6 sm-custom:p-[10px] sm:p-[18px] flex flex-col justify-start items-start">
           <List
             ref={listRef} // Attach the ref to the List component
-            height={window.innerHeight - 228} // Adjust the height according to your layout
+            height={window.innerHeight - 200} // Adjust the height according to your layout
             itemCount={messages.length}
             itemSize={80} // Adjust item height as per your design
             width="100%"
