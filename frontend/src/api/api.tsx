@@ -1,2 +1,2 @@
-export const api = 'http://localhost:3000/api'; 
-export const socketuri = 'ws://localhost:3000';
+export const api = 'https://echochatter-backend.onrender.com/api'; 
+export const socketuri = 'wss://echochatter-backend.onrender.com'; 
