@@ -15,31 +15,24 @@ interface Message {
 const socketUrl = socketuri;
 
 const IndivitualChat = () => {
-  const { chatId } = useParams<{ chatId: string }>(); // Capture dynamic chatId from URL
-  const self = localStorage.getItem("username"); // The current user (change as necessary)
+  const { chatId } = useParams<{ chatId: string }>();
+  const self = localStorage.getItem("username");
   const { fetchContacts } = useGlobalState();
   const [message, setMessage] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
-  const [socket, setSocket] = useState<WebSocket | null>(null); // To store the WebSocket connection
+  const [socket, setSocket] = useState<WebSocket | null>(null);
 
-  const listRef = useRef<List | null>(null); // Ref for the List component
+  const listRef = useRef<List | null>(null);
 
-  // Determine if it's a group or private chat
-  const isGroupChat = chatId && chatId.includes("group"); // Check if the chatId starts with 'group'
-  const chatIdentifier = isGroupChat ? chatId.split("-").slice(1).join("-") : chatId; // Remove "group:" prefix if it's a group chat
+  const isGroupChat = chatId && chatId.includes("group");
+  const chatIdentifier = isGroupChat ? chatId.split("-").slice(1).join("-") : chatId;
 
-  // Clear previous messages when changing chats
   useEffect(() => {
-    setMessages([]); // Clear previous messages when changing chats
-
-    // Dynamically set the WebSocket connection URL
+    setMessages([]);
     const socketConnection = new WebSocket(`${socketUrl}/${self}/${chatIdentifier}`);
-    console.log(socketConnection);
-
     setSocket(socketConnection);
 
     socketConnection.onopen = () => {
-      console.log(`WebSocket connection established with ${chatIdentifier}`);
       socketConnection.send(
         JSON.stringify({
           sender: self,
@@ -50,39 +43,19 @@ const IndivitualChat = () => {
     };
 
     socketConnection.onmessage = (event: MessageEvent) => {
-      try {
-        let data = JSON.parse(event.data);
+      let data = JSON.parse(event.data);
+      data = Array.isArray(data) ? data : [data];
 
-        // If the incoming data is an array, make sure it’s processed as an array
-        data = Array.isArray(data) ? data : [data];
-
-        console.log(data);
-
-        // Check if the incoming data contains messages and/or notifications
-        data.forEach((item: { type: string; message?: string; messages?: Message[] }) => {
-          if (item.type === "contact-update") {
-            console.log("Notification:", item.message);
-            fetchContacts();
-          }
-
-          if (item.type === "new-group-chat") {
-            console.log("New message notification:", item.message);
-            fetchContacts();
-          }
-
-          // Handle other types of incoming data, like chat messages
-          if (Array.isArray(item.messages)) {
-            const incomingMessages = item.messages.map((message: Message) => ({
-              sender: message.sender,
-              content: message.content,
-              timestamp: message.timestamp,
-            }));
-            setMessages((prevMessages) => [...prevMessages, ...incomingMessages]);
-          }
-        });
-      } catch (error) {
-        console.error("Error processing incoming message:", error);
-      }
+      data.forEach((item: { type: string; message?: string; messages?: Message[] }) => {
+        if (Array.isArray(item.messages)) {
+          const incomingMessages = item.messages.map((message: Message) => ({
+            sender: message.sender,
+            content: message.content,
+            timestamp: message.timestamp,
+          }));
+          setMessages((prevMessages) => [...prevMessages, ...incomingMessages]);
+        }
+      });
     };
 
     socketConnection.onerror = (error) => {
@@ -90,12 +63,9 @@ const IndivitualChat = () => {
     };
 
     return () => {
-      if (socketConnection) {
-        socketConnection.close();
-        console.log("WebSocket disconnected");
-      }
+      socketConnection.close();
     };
-  }, [chatIdentifier, fetchContacts, self]); // Dependencies: when chatIdentifier changes (either username or groupname)
+  }, [chatIdentifier, fetchContacts, self]);
 
   const renderMessage = ({
     index,
@@ -107,7 +77,6 @@ const IndivitualChat = () => {
     const message = messages[index];
     const isSender = message.sender === self;
 
-    // Format timestamp to human-readable format
     const formattedTime = new Date(message.timestamp).toLocaleString([], {
       hour: "2-digit",
       minute: "2-digit",
@@ -115,20 +84,17 @@ const IndivitualChat = () => {
     });
 
     return (
-      <div key={index} style={{ ...style, paddingBottom: "16px" }} className={`flex items-start mb-6`}>
+      <div key={index} style={{ ...style, paddingBottom: "16px" }} className="flex items-start mb-6">
         <div className={`${isSender ? "ml-auto" : ""}`}>
           <div className={`flex flex-col max-w-xs ${isSender ? "items-end" : "items-start"}`}>
-            {/* Display sender's name only for group chat */}
             {isGroupChat && !isSender && (
               <div className="text-xs text-gray-400 mb-1">{message.sender}</div>
             )}
-
             <div
               className={`rounded-lg p-1 flex ${isSender ? "bg-blue-500 text-white" : "bg-gray-600 text-white"} sm:max-w-[300px] sm-custom:max-w-[200px] lg:max-w-[400px] break-all`}
             >
               {message.content}
             </div>
-
             <div className="text-[10px] text-gray-400 mt-1 pb-2">{formattedTime}</div>
           </div>
         </div>
@@ -136,38 +102,34 @@ const IndivitualChat = () => {
     );
   };
 
-  // Scroll to bottom logic when new messages arrive
   useEffect(() => {
     if (listRef.current) {
       listRef.current.scrollToItem(messages.length - 1); // Scroll to the last message
     }
-  }, [messages]); // Trigger scroll when messages change
+  }, [messages]);
 
   const handleMessageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setMessage(e.target.value);
   };
 
   const handleSend = () => {
-    // Ensure 'self' is a valid string
-    const sender = self || "UnknownUser"; // Default to a placeholder name if 'self' is null
-
+    const sender = self || "UnknownUser";
     if (message.trim() && socket) {
       const messageData = {
-        type: isGroupChat ? "group" : "private", // Dynamic type based on chat type
-        sender: sender, // Use the non-null sender
+        type: isGroupChat ? "group" : "private",
+        sender: sender,
         receiver: chatIdentifier,
         content: message,
       };
 
-      console.log(messageData);
-      socket.send(JSON.stringify(messageData)); // Send message via WebSocket
+      socket.send(JSON.stringify(messageData));
 
       setMessages((prevMessages) => [
         ...prevMessages,
         { sender: sender, content: message, timestamp: Date.now() },
       ]);
 
-      setMessage(""); // Clear input field
+      setMessage("");
     }
   };
 
@@ -179,11 +141,11 @@ const IndivitualChat = () => {
 
   const userData = {
     profilePicture: "https://via.placeholder.com/53",
-    name: chatIdentifier, // For group chat, show group name
+    name: chatIdentifier,
   };
 
   return (
-    <div className="flex-col w-full h-[calc(100vh-109px)]">  
+    <div className="flex-col w-full h-[calc(100vh-109px)]">
       <div className="flex items-center bg-black px-4 py-3 h-[49px]">
         <img
           src={userData.profilePicture || "https://via.placeholder.com/50"}
@@ -191,19 +153,17 @@ const IndivitualChat = () => {
           className="w-8 h-8 rounded-full"
         />
         <div className="ml-3">
-          <h1 className="text-sm font-semibold text-white">
-            {userData.name || chatIdentifier}
-          </h1>
+          <h1 className="text-sm font-semibold text-white">{userData.name || chatIdentifier}</h1>
         </div>
       </div>
 
       <div className="flex flex-col lg:h-[calc(100svh-128px)] sm-custom:h-[calc(100vh-110px)] w-full bg-blackv1">
         <div className="flex-1 bg-blackv1 p-6 sm-custom:p-[10px] sm:p-[18px] flex flex-col justify-start items-start">
           <List
-            ref={listRef} // Attach the ref to the List component
-            height={window.innerHeight - 200} // Adjust the height according to your layout
+            ref={listRef}
+            height={window.innerHeight - 190}
             itemCount={messages.length}
-            itemSize={80} // Adjust item height as per your design
+            itemSize={80}
             width="100%"
             className="overflow-y-auto scrollbar-thin scrollbar-none scrollbar-track-transparent"
           >
