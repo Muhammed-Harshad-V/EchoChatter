@@ -1,17 +1,20 @@
 import { useState } from 'react';
+
+// Define the PrivateContact type
+type PrivateContact = {
+  type: 'private';
+  data: {
+    username: string;
+    firstname: string;
+    lastname: string;
+  };
+};
 import axios from 'axios';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useGlobalState } from '../../../../context/ContactsProvider'; // Custom context for contacts
 import { api } from '../../../../api/api';
 
-interface UserDetails {
-  data: {
-    username: string;
-    firstname: string;
-    lastname: string;
-    email: string;
-  };
-}
+
 
 const NewGroupChat = () => {
   const [groupName, setGroupName] = useState(''); // For storing group name input
@@ -136,11 +139,13 @@ const NewGroupChat = () => {
               onChange={handleParticipantChange}
               className="w-full p-3 rounded-md bg-gray-800 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              {contacts.map((contact: UserDetails) => (
-                <option key={contact.data.username} value={contact.data.username}>
-                  {contact.data.firstname} {contact.data.lastname}
-                </option>
-              ))}
+              {contacts
+                .filter((contact): contact is PrivateContact => contact.type === "private")
+                .map((contact) => (
+                  <option key={contact.data.username} value={contact.data.username}>
+                    {contact.data.firstname} {contact.data.lastname}
+                  </option>
+                ))}
             </select>
           </div>
 
@@ -151,7 +156,8 @@ const NewGroupChat = () => {
               <ul className="space-y-2">
                 {selectedParticipants.map((username) => {
                   const contact = contacts.find(
-                    (contact: UserDetails) => contact.data.username === username
+                    (contact): contact is PrivateContact =>
+                      contact.type === "private" && contact.data.username === username
                   );
                   return contact ? (
                     <li key={username} className="flex justify-between items-center">
