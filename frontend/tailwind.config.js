@@ -1,4 +1,6 @@
 /** @type {import('tailwindcss').Config} */
+import scrollbar from 'tailwind-scrollbar';
+
 export default {
   content: [
     "./index.html",
@@ -14,10 +16,9 @@ export default {
       screens: {
         'sm-custom': '320px', // Define custom breakpoint
       },
-
     },
   },
   plugins: [
-    require('tailwind-scrollbar'),
+    scrollbar,  // Using imported scrollbar plugin
   ],
 }
