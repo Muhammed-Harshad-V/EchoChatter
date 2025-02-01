@@ -15,17 +15,17 @@ const socketUrl = "ws://localhost:3000"; // Replace with your WebSocket server U
 
 const IndivitualChat = () => {
   const { chatId } = useParams<{ chatId: string }>(); // Capture dynamic chatId from URL
-  const self = localStorage.getItem('username'); // The current user (change as necessary)
-  const { fetchContacts } = useGlobalState()
-  const [message, setMessage] = useState("");
+  const self = localStorage.getItem("username"); // The current user (change as necessary)
+  const { fetchContacts } = useGlobalState();
+  const [message, setMessage] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [socket, setSocket] = useState<WebSocket | null>(null); // To store the WebSocket connection
 
   const listRef = useRef<List | null>(null); // Ref for the List component
 
   // Determine if it's a group or private chat
-  const isGroupChat = chatId && chatId.includes("group"); // Check if the chatId starts with 'group:'
-  const chatIdentifier = isGroupChat ? chatId?.split("-")[chatId?.split("-").length - 1] : chatId; // Remove "group:" prefix if it's a group chat
+  const isGroupChat = chatId && chatId.includes("group"); // Check if the chatId starts with 'group'
+  const chatIdentifier = isGroupChat ? chatId.split("-").slice(1).join("-") : chatId; // Remove "group:" prefix if it's a group chat
 
   // Clear previous messages when changing chats
   useEffect(() => {
@@ -33,7 +33,7 @@ const IndivitualChat = () => {
 
     // Dynamically set the WebSocket connection URL
     const socketConnection = new WebSocket(`${socketUrl}/${self}/${chatIdentifier}`);
-    console.log(socketConnection)
+    console.log(socketConnection);
 
     setSocket(socketConnection);
 
@@ -48,30 +48,30 @@ const IndivitualChat = () => {
       );
     };
 
-    socketConnection.onmessage = (event) => {
+    socketConnection.onmessage = (event: MessageEvent) => {
       try {
         let data = JSON.parse(event.data);
-    
+
         // If the incoming data is an array, make sure it’s processed as an array
         data = Array.isArray(data) ? data : [data];
-    
+
         console.log(data);
-    
+
         // Check if the incoming data contains messages and/or notifications
-        data.forEach((item) => {
-          if (item.type === 'contact-update') {
-            console.log('Notification:', item.message);
+        data.forEach((item: { type: string; message?: string; messages?: Message[] }) => {
+          if (item.type === "contact-update") {
+            console.log("Notification:", item.message);
             fetchContacts();
           }
 
-          if (item.type === 'new-group-chat') {
-            console.log('New message notification:', item.message);
+          if (item.type === "new-group-chat") {
+            console.log("New message notification:", item.message);
             fetchContacts();
           }
-    
+
           // Handle other types of incoming data, like chat messages
           if (Array.isArray(item.messages)) {
-            const incomingMessages = item.messages.map((message) => ({
+            const incomingMessages = item.messages.map((message: Message) => ({
               sender: message.sender,
               content: message.content,
               timestamp: message.timestamp,
@@ -83,8 +83,7 @@ const IndivitualChat = () => {
         console.error("Error processing incoming message:", error);
       }
     };
-    
-    
+
     socketConnection.onerror = (error) => {
       console.error("WebSocket Error: ", error);
     };
@@ -95,35 +94,40 @@ const IndivitualChat = () => {
         console.log("WebSocket disconnected");
       }
     };
-  }, [chatIdentifier]); // Dependencies: when chatIdentifier changes (either username or groupname)
+  }, [chatIdentifier, fetchContacts, self]); // Dependencies: when chatIdentifier changes (either username or groupname)
 
-  const renderMessage = ({ index, style }: { index: number; style: React.CSSProperties }) => {
+  const renderMessage = ({
+    index,
+    style,
+  }: {
+    index: number;
+    style: React.CSSProperties;
+  }) => {
     const message = messages[index];
     const isSender = message.sender === self;
-  
+
     // Format timestamp to human-readable format
     const formattedTime = new Date(message.timestamp).toLocaleString([], {
       hour: "2-digit",
       minute: "2-digit",
       hour12: true,
     });
-  
+
     return (
-      <div key={index} style={{...style, paddingBottom: '16px'}} className={`flex items-start mb-6`}>
+      <div key={index} style={{ ...style, paddingBottom: "16px" }} className={`flex items-start mb-6`}>
         <div className={`${isSender ? "ml-auto" : ""}`}>
           <div className={`flex flex-col max-w-xs ${isSender ? "items-end" : "items-start"}`}>
-  
             {/* Display sender's name only for group chat */}
             {isGroupChat && !isSender && (
               <div className="text-xs text-gray-400 mb-1">{message.sender}</div>
             )}
-  
+
             <div
               className={`rounded-lg p-1 flex ${isSender ? "bg-blue-500 text-white" : "bg-gray-600 text-white"} sm:max-w-[300px] sm-custom:max-w-[200px] lg:max-w-[400px] break-all`}
             >
               {message.content}
             </div>
-  
+
             <div className="text-[10px] text-gray-400 mt-1 pb-2">{formattedTime}</div>
           </div>
         </div>
@@ -144,28 +148,27 @@ const IndivitualChat = () => {
 
   const handleSend = () => {
     // Ensure 'self' is a valid string
-    const sender = self || "UnknownUser";  // Default to a placeholder name if 'self' is null
-    
+    const sender = self || "UnknownUser"; // Default to a placeholder name if 'self' is null
+
     if (message.trim() && socket) {
       const messageData = {
         type: isGroupChat ? "group" : "private", // Dynamic type based on chat type
-        sender: sender,  // Use the non-null sender
+        sender: sender, // Use the non-null sender
         receiver: chatIdentifier,
         content: message,
       };
-  
+
       console.log(messageData);
       socket.send(JSON.stringify(messageData)); // Send message via WebSocket
-  
+
       setMessages((prevMessages) => [
         ...prevMessages,
         { sender: sender, content: message, timestamp: Date.now() },
       ]);
-  
+
       setMessage(""); // Clear input field
     }
   };
-  
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
@@ -175,7 +178,7 @@ const IndivitualChat = () => {
 
   const userData = {
     profilePicture: "https://via.placeholder.com/53",
-    name: chatIdentifier // For group chat, show group name
+    name: chatIdentifier, // For group chat, show group name
   };
 
   return (

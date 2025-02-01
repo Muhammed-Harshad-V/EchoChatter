@@ -2,33 +2,30 @@ import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { faComments, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import axios from 'axios';
 import { useGlobalState } from '../../context/ContactsProvider';
 
-interface Contact {
-  type: 'private' | 'group'; // Type of contact: private (user) or group
-  data: {
-    username?: string;   // For private contact
-    firstname?: string;  // For private contact
-    lastname?: string;   // For private contact
-    name?: string;       // For group contact
-    participants?: string[]; // For group contact
-  };
-}
+// interface ContactData {
+//   type: 'private' | 'group'; // Type of contact: private (user) or group
+//   data: {
+//     username?: string;   // For private contact
+//     firstname?: string;  // For private contact
+//     lastname?: string;   // For private contact
+//     name?: string;       // For group contact
+//     participants?: string[]; // For group contact
+//   };
+// }
 
 const Contact = () => {
   const [isDrawerExpanded, setIsDrawerExpanded] = useState(false); // Controls full drawer open/close
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 768); // Tracks if screen width is <768px
-  const { contacts, loading, fetchContacts } = useGlobalState()
-  // const [contacts, setContacts] = useState<Contact[]>([]); // State to store the contact list data
-  // const [loading, setLoading] = useState(true); // State to handle loading status
+  const { contacts, loading, fetchContacts } = useGlobalState();
   const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
   const navigate = useNavigate(); // Used for programmatic navigation
 
   // Fetch contacts from API
   useEffect(() => {
     fetchContacts(); // Call the function to fetch contacts
-  }, []); // Run only once on component mount
+  }, [fetchContacts]); // Run only once on component mount
 
   // Handle screen resizing to determine small screen behavior
   useEffect(() => {
@@ -51,13 +48,13 @@ const Contact = () => {
 
   // Close the drawer when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    const handleClickOutside = (event: MouseEvent) => {
       const drawer = document.getElementById('drawer');
       const toggleButton = document.getElementById('toggle-drawer-button');
       if (
         isDrawerExpanded &&
         drawer &&
-        !drawer.contains(event.target) &&
+        !drawer.contains(event.target as Node) &&
         toggleButton !== event.target
       ) {
         setIsDrawerExpanded(false); // Close the drawer
@@ -153,7 +150,7 @@ const Contact = () => {
                 <div className="flex items-center space-x-4">
                   <div className="relative w-10 h-10 rounded-full">
                     <img
-                      src={defaultPhotoUrl} // Use default if no photo src={contact. || defaultPhotoUrl} 
+                      src={defaultPhotoUrl} // Use default if no photo src={contact.data.avatar || defaultPhotoUrl} 
                       alt={contact.type === 'private' ? contact.data.firstname : contact.data.name}
                       className="object-cover w-full h-full rounded-full"
                     />

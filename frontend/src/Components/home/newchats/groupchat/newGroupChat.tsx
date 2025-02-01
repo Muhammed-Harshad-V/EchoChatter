@@ -74,7 +74,7 @@ const NewGroupChat = () => {
       });
 
       if (response.status === 201) {
-        navigate(`/group/${response.name}`); // Navigate to the newly created group chat
+        navigate(`/group/${response.data.name}`); // Navigate to the newly created group chat (fixed response name)
       } else {
         setError('Error creating group');
       }
