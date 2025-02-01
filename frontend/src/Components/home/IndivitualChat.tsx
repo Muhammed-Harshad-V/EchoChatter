@@ -145,7 +145,7 @@ const IndivitualChat = () => {
   };
 
   return (
-    <div className="flex-col w-full h-[calc(100vh-109px)]">
+    <div className="flex-col w-full h-[calc(100vh-60px)]">
       <div className="flex items-center bg-black px-4 py-3 h-[49px]">
         <img
           src={userData.profilePicture || "https://via.placeholder.com/50"}
@@ -157,14 +157,14 @@ const IndivitualChat = () => {
         </div>
       </div>
 
-      <div className="flex flex-col lg:h-[calc(100svh-128px)] sm-custom:h-[calc(100vh-110px)] w-full bg-blackv1">
+      <div className="flex flex-col lg:h-[calc(100svh-90px)] sm-custom:h-[calc(100vh-120px)] w-full bg-blackv1">
         <div className="flex-1 bg-blackv1 p-6 sm-custom:p-[10px] sm:p-[18px] flex flex-col justify-start items-start">
           <List
             ref={listRef}
-            height={window.innerHeight - 90}
+            height={window.innerHeight - 150}
             itemCount={messages.length}
             itemSize={80}
-            width="80%"
+            width="100%"
             className="overflow-y-auto scrollbar-thin scrollbar-none scrollbar-track-transparent"
           >
             {renderMessage}
