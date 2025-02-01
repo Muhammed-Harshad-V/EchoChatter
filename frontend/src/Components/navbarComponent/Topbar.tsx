@@ -19,7 +19,7 @@ const TopBar: React.FC = () => {
 
   useEffect(() => {
     const loggedInUsername = localStorage.getItem('username');  // Assuming you have the username
-    if (loggedInUsername) {
+    if (loggedInUsername && !wsRef.current) { // Only create a new WebSocket if it doesn't exist already
       // Establish WebSocket connection
       wsRef.current = new WebSocket(`${socketuri}/${loggedInUsername}`);
       
@@ -49,12 +49,12 @@ const TopBar: React.FC = () => {
         data.forEach((item) => {
           if (item.type === 'contact-update') {
             console.log('Notification:', item.message);
-            fetchContacts();
+            fetchContacts(); // Ensure this is only called when necessary
           }
   
           if (item.type === 'new-group-chat') {
             console.log('New message notification:', item.message);
-            fetchContacts();
+            fetchContacts(); // Ensure this is only called when necessary
           }
         });
       };
@@ -84,7 +84,7 @@ const TopBar: React.FC = () => {
         }
       };
     }
-  }, [fetchContacts]); 
+  }, []); // Empty dependency array ensures it runs only once after the first render
 
   // Logout function
   const handleLogout = () => {
