@@ -164,7 +164,7 @@ const IndivitualChat = () => {
             height={window.innerHeight - 90}
             itemCount={messages.length}
             itemSize={80}
-            width="100%"
+            width="80%"
             className="overflow-y-auto scrollbar-thin scrollbar-none scrollbar-track-transparent"
           >
             {renderMessage}
