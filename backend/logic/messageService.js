@@ -2,6 +2,9 @@ const mongoose = require('mongoose');
 const PrivateChat = require('../models/PrivateChat');
 const GroupChat = require('../models/GroupChat');
 const User = require('../models/User');
+const WebSocket = require('ws');
+
+
 const connections = {}; // Store WebSocket connections by pair of usernames
 
 

@@ -3,54 +3,78 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 import { Outlet } from 'react-router-dom';
 import { useGlobalState } from '../../context/ContactsProvider';
+import { useNavigate } from 'react-router-dom';
+
+// Define WebSocket message structure
+interface WebSocketMessage {
+  type: string;
+  message: string;
+}
 
 const TopBar: React.FC = () => {
+  const navigate = useNavigate();
   const wsRef = useRef<WebSocket | null>(null);
-    const { fetchContacts } = useGlobalState()
+  const { fetchContacts } = useGlobalState(); // Make sure this is correctly typed in ContactsProvider
+
   useEffect(() => {
     const loggedInUsername = localStorage.getItem('username');  // Assuming you have the username
     if (loggedInUsername) {
       // Establish WebSocket connection
       wsRef.current = new WebSocket(`ws://localhost:3000/${loggedInUsername}`);
+      
+      // WebSocket event handlers
       wsRef.current.onopen = () => {
         console.log(`Connected to WebSocket server as ${loggedInUsername}`);
       };
-      wsRef.current.onmessage = (event) => {
-          let data = JSON.parse(event.data);
+
+      wsRef.current.onmessage = (event: MessageEvent) => {
+        let data: WebSocketMessage[] = [];
+
+        try {
+          data = JSON.parse(event.data);
+        } catch (error) {
+          console.error('Error parsing WebSocket data:', error);
+          return;
+        }
       
-          // If the incoming data is an array, make sure it’s processed as an array
-          data = Array.isArray(data) ? data : [data];
+        // Ensure the data is an array, if not wrap it in an array
+        if (!Array.isArray(data)) {
+          data = [data];
+        }
       
-          console.log(data);
+        console.log(data);
       
-          // Check if the incoming data contains messages and/or notifications
-          data.forEach((item) => {
-            if (item.type === 'contact-update') {
-              console.log('Notification:', item.message);
-              fetchContacts();
-            }
+        // Check if the incoming data contains messages and/or notifications
+        data.forEach((item) => {
+          if (item.type === 'contact-update') {
+            console.log('Notification:', item.message);
+            fetchContacts();
+          }
   
-            if (item.type === 'new-group-chat') {
-              console.log('New message notification:', item.message);
-              fetchContacts();
-            }
-          });
-        };
+          if (item.type === 'new-group-chat') {
+            console.log('New message notification:', item.message);
+            fetchContacts();
+          }
+        });
+      };
 
       wsRef.current.onclose = () => {
         console.log("WebSocket connection closed");
       };
+
       wsRef.current.onerror = (error) => {
         console.error("WebSocket error:", error);
       };
+
       // Send a message every 10 seconds to keep the connection alive
       const intervalId = setInterval(() => {
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-          const heartbeatMessage = { type: "ping", message: "keep alive" };
+          const heartbeatMessage: WebSocketMessage = { type: "ping", message: "keep alive" };
           wsRef.current.send(JSON.stringify(heartbeatMessage)); // Send heartbeat message
           console.log("Sent heartbeat to server");
         }
       }, 10000); // 10 seconds
+
       // Clean up when the component is unmounted
       return () => {
         clearInterval(intervalId);  // Clear the interval when the component is unmounted
@@ -59,14 +83,13 @@ const TopBar: React.FC = () => {
         }
       };
     }
-  }, []); 
+  }, [fetchContacts]); 
 
   // Logout function
   const handleLogout = () => {
     // Remove the username or any other user-related data from localStorage
     localStorage.removeItem('username'); // or any other key you're using
-
-    // Reload the page to reflect the logout action
+    navigate('/login');
     window.location.reload();
   };
 
