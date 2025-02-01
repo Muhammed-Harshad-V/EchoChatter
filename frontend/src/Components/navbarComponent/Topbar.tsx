@@ -95,7 +95,7 @@ const TopBar: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-blacks1">
+    <div className="flex flex-col min-h-screen bg-black">
       {/* TopBar - Fixed */}
       <div className="flex items-center justify-between px-8 py-4 bg-blacks1 shadow-md h-[60px] fixed w-full top-0 z-50">
         <div className="flex items-center">
