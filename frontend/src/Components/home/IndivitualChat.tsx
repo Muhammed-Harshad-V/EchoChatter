@@ -183,7 +183,7 @@ const IndivitualChat = () => {
   };
 
   return (
-    <div className="flex-col w-full h-full">
+    <div className="flex-col w-full h-[calc(100vh-60px)]">  
       <div className="flex items-center bg-black px-4 py-3 h-[49px]">
         <img
           src={userData.profilePicture || "https://via.placeholder.com/50"}
