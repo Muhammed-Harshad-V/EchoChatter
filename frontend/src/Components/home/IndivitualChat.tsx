@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPaperPlane, faImage } from "@fortawesome/free-solid-svg-icons";
 import { FixedSizeList as List } from "react-window";
 import { useGlobalState } from "../../context/ContactsProvider";
+import { socketuri } from "../../api/api";
 
 interface Message {
   sender: string;
@@ -11,7 +12,7 @@ interface Message {
   timestamp: number;
 }
 
-const socketUrl = "ws://localhost:3000"; // Replace with your WebSocket server URL
+const socketUrl = socketuri;
 
 const IndivitualChat = () => {
   const { chatId } = useParams<{ chatId: string }>(); // Capture dynamic chatId from URL

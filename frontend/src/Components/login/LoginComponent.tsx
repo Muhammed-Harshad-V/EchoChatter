@@ -1,6 +1,12 @@
 import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { api } from "../../api/api";
+
+// Type definition for API error response
+interface ApiErrorResponse {
+  message: string;
+}
 
 const LoginComponent = () => {
   const [username, setUsername] = useState("");
@@ -18,25 +24,25 @@ const LoginComponent = () => {
 
     try {
       // Make API call to login endpoint
-      const response = await axios.post('http://localhost:3000/api/user/login', { username: username, password });
+      const response = await axios.post(`${api}/api/user/login`, { username: username, password });
       
       // Check if login is successful
       if (response.status === 200) {
         localStorage.setItem("username", username);
         navigate('/'); // Assuming you have a dashboard route
       }
-    } catch (err: any) { 
-      // Handle errors
-      if (err.response && err.response.data && err.response.data.message) {
-        setError(err.response.data.message); // Set error message from response
+    } catch (err: unknown) {
+      // Handle errors with type checking
+      if (axios.isAxiosError(err)) {
+        const errorResponse = err.response?.data as ApiErrorResponse;
+        setError(errorResponse?.message || "Server error. Please try again later.");
       } else {
-        setError("Server error. Please try again later.");
+        setError("An unexpected error occurred. Please try again later.");
       }
     } finally {
       setLoading(false); // Stop loading
     }
   };
-
 
   return (
     <div className="flex items-center justify-center h-[100vh] bg-black">

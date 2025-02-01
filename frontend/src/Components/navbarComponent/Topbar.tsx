@@ -4,6 +4,7 @@ import { faUser, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 import { Outlet } from 'react-router-dom';
 import { useGlobalState } from '../../context/ContactsProvider';
 import { useNavigate } from 'react-router-dom';
+import { socketuri } from '../../api/api';
 
 // Define WebSocket message structure
 interface WebSocketMessage {
@@ -20,7 +21,7 @@ const TopBar: React.FC = () => {
     const loggedInUsername = localStorage.getItem('username');  // Assuming you have the username
     if (loggedInUsername) {
       // Establish WebSocket connection
-      wsRef.current = new WebSocket(`ws://localhost:3000/${loggedInUsername}`);
+      wsRef.current = new WebSocket(`${socketuri}/${loggedInUsername}`);
       
       // WebSocket event handlers
       wsRef.current.onopen = () => {

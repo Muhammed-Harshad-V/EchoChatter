@@ -3,6 +3,7 @@ import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { api } from '../../../../api/api';
 
 interface UserDetails {
   username: string;
@@ -38,7 +39,7 @@ const NewPrivateChat = () => {
 
     try {
       // Make an API request to check the username
-      const response = await axios.get(`http://localhost:3000/api/user/${username}`);
+      const response = await axios.get(`${api}/user/${username}`);
       
       if (response.data) {
         setUserDetails(response.data); // Set the user details from the response
@@ -77,7 +78,7 @@ const NewPrivateChat = () => {
 
     try {
       // Send user data to the backend along with the logged-in username
-      const response = await axios.post('http://localhost:3000/api/user/new/add', {
+      const response = await axios.post(`${api}/user/new/add`, {
         username: userDetailsUsername, // the username from the search
         firstname,
         lastname,

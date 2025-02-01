@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
+import { api } from "../../api/api";
 
 const RegisterComponent = () => {
   const [username, setUsername] = useState("");
@@ -12,8 +13,8 @@ const RegisterComponent = () => {
 
   const navigate = useNavigate(); // For navigation after registration
 
-   // Handle form submission
-   const handleRegister = async (e: React.FormEvent) => {
+  // Handle form submission
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null); // Clear any previous errors
     setLoading(true); // Start loading
@@ -27,7 +28,7 @@ const RegisterComponent = () => {
 
     try {
       // Make API call to register the user
-      const response = await axios.post("http://localhost:3000/api/user/register", {
+      const response = await axios.post(`${api}/user/register`, {
         username,
         email,
         password,
@@ -40,12 +41,17 @@ const RegisterComponent = () => {
         // Redirect to profile creation page
         navigate("/create/Profile"); // Redirect to profile creation page
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Handle error responses from the server
-      if (err.response && err.response.data && err.response.data.message) {
-        setError(err.response.data.message); // Display server error message
+      if (axios.isAxiosError(err)) {
+        const axiosError = err as AxiosError;
+        if (axiosError.response && axiosError.response.data && (axiosError.response.data as { message: string }).message) {
+          setError((axiosError.response.data as { message: string }).message); // Display server error message
+        } else {
+          setError("An unknown error occurred. Please try again later.");
+        }
       } else {
-        setError("Server error. Please try again later.");
+        setError("An unexpected error occurred. Please try again later.");
       }
     } finally {
       setLoading(false); // Stop loading

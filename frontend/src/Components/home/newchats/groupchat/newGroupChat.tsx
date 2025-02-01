@@ -2,6 +2,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useGlobalState } from '../../../../context/ContactsProvider'; // Custom context for contacts
+import { api } from '../../../../api/api';
 
 interface UserDetails {
   data: {
@@ -68,7 +69,7 @@ const NewGroupChat = () => {
 
     try {
       // Make an API request to create the group chat
-      const response = await axios.post('http://localhost:3000/api/user/new/group', {
+      const response = await axios.post(`${api}/user/new/group`, {
         name: groupName,
         participants: [loggedInUsername, ...selectedParticipants],
       });

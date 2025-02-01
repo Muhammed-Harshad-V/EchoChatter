@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import axios from "axios"; // Make sure you have axios installed
 import { useNavigate } from "react-router-dom"; // For redirecting after successful update
+import { api } from "../../../api/api";
 
 const ProfileCreationPage = () => {
   const [firstName, setFirstName] = useState("");
@@ -50,7 +51,7 @@ const ProfileCreationPage = () => {
 
     try {
       // Call the API to update user details (you can replace this with your actual API endpoint)
-      const response = await axios.put(`http://localhost:3000/api/user/${username}`, data);
+      const response = await axios.put(`${api}/user/${username}`, data);
 
       // Check if the response is successful
       if (response.status === 200) {

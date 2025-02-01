@@ -1,9 +1,28 @@
 import { createContext, useContext, ReactNode, useState, useEffect } from "react";
 import axios from "axios";
+import { api } from "../api/api";
+
+// Define the types for the contact data
+interface PrivateContact {
+  type: "private";
+  data: {
+    username: string;
+    firstname: string;
+    lastname: string;
+  };
+}
+
+interface GroupContact {
+  type: "group";
+  data: {
+    name: string;
+    participants: string[];
+  };
+}
 
 // Define the types for the context value
 interface GlobalStateContextType {
-  contacts: any[];
+  contacts: (PrivateContact | GroupContact)[];
   loading: boolean;
   fetchContacts: () => void;
 }
@@ -26,7 +45,7 @@ type ContactsProviderProps = {
 };
 
 export const ContactsProvider = ({ children }: ContactsProviderProps) => {
-  const [contacts, setContacts] = useState<any[]>([]);
+  const [contacts, setContacts] = useState<(PrivateContact | GroupContact)[]>([]);
   const [loading, setLoading] = useState(false);
 
   const fetchContacts = async () => {
@@ -39,13 +58,11 @@ export const ContactsProvider = ({ children }: ContactsProviderProps) => {
 
     setLoading(true);
     try {
-      const response = await axios.get(
-        `http://localhost:3000/api/user/contacts/${Username}`
-      );
+      const response = await axios.get(`${api}/user/contacts/${Username}`);
       const { privateContacts, groupContacts } = response.data;
 
-      const formattedContacts = [
-        ...privateContacts.map((contact: any) => ({
+      const formattedContacts: (PrivateContact | GroupContact)[] = [
+        ...privateContacts.map((contact: { username: string; firstname: string; lastname: string }) => ({
           type: "private",
           data: {
             username: contact.username,
@@ -53,7 +70,7 @@ export const ContactsProvider = ({ children }: ContactsProviderProps) => {
             lastname: contact.lastname,
           },
         })),
-        ...groupContacts.map((group: any) => ({
+        ...groupContacts.map((group: { groupname: string; participants: string[] }) => ({
           type: "group",
           data: {
             name: group.groupname,
