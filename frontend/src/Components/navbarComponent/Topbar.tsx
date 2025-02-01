@@ -95,7 +95,7 @@ const TopBar: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-screen flex flex-col bg-blacks1 fixed z-50 top-0 left-0">
+    <div className="flex flex-col min-h-screen bg-blacks1">
       {/* TopBar - Fixed */}
       <div className="flex items-center justify-between px-8 py-4 bg-blacks1 shadow-md h-[60px] fixed w-full top-0 z-50">
         <div className="flex items-center">
@@ -119,7 +119,7 @@ const TopBar: React.FC = () => {
       </div>
 
       {/* Scrollable Content */}
-      <div className="overflow-y-auto h-full mt-[60px] xl:w-[90%] w-full m-auto">
+      <div className="overflow-y-auto mt-[60px] flex-1">
         <Outlet />
       </div>
     </div>
