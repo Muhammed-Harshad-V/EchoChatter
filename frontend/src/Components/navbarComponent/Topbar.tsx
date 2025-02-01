@@ -95,7 +95,7 @@ const TopBar: React.FC = () => {
   };
 
   return (
-    <div className='w-full h-full flex flex-col bg-blacks1'>
+    <div className='w-full h-[100svh] flex flex-col bg-blacks1'>
       <div className="flex items-center justify-between px-8 py-4 bg-blacks1 shadow-md h-[60px]">
         {/* Left: App Name */}
         <div className="flex items-center">
