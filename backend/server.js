@@ -8,7 +8,7 @@ const { handleMessage, handleDisconnection, handleConnection,} = require('./logi
 
 
 // MongoDB Connection
-const DB_URI = 'mongodb://localhost:27017/messenger';
+const DB_URI = 'mongodb+srv://admin:admin7736pass@roombooking.ysmxa.mongodb.net/echochatter?retryWrites=true&w=majority&appName=RoomBooking';
 mongoose.connect(DB_URI)
     .then(() => console.log('Connected to MongoDB'))
     .catch(err => console.error('MongoDB connection error:', err));
